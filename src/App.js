@@ -14,6 +14,7 @@ function App() {
           <Route path="/Topology" element={<Topology />} />
           <Route path="/" element={<SignIn />} />
           <Route path="/Dashboard" element={<Dashboard />} />
+          <Route path="/SignIn" element={<SignIn />} />
        
         </Routes>
         <ToastContainer />
