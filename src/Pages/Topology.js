@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Menu } from "../components/Menu";
 import {
   Paper,
   Typography,
@@ -48,12 +47,14 @@ const useStyles = makeStyles({
     "&:hover": {
       transform: "scale(1.1)",
     },
+    
   },
   icon: {
     width: "45px",
     height: "45px",
     borderRadius: "50%",
     boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+    
   },
   labelText: {
     border: "1px solid black", 
@@ -105,7 +106,7 @@ export const Topology = () => {
 
   return (
     <div>
-      <Menu />
+  
       <div className={classes.root}>
         <div className={classes.iconList}>
           <HostImageIcon onAdd={handleAddIcon}  />
