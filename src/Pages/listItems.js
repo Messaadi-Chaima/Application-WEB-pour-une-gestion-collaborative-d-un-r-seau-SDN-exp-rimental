@@ -5,7 +5,6 @@ import ListItemText from '@mui/material/ListItemText';
 import { Link } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import AssignmentIcon from '@mui/icons-material/Assignment';
 import HubIcon from '@mui/icons-material/Hub';
 
 export const MainListItems = () => (
@@ -27,17 +26,12 @@ export const MainListItems = () => (
 
 export const SecondaryListItems = () => (
   <React.Fragment>
-    <ListItemButton>
+    <ListItemButton component={Link} to="/">
       <ListItemIcon>
         <LoginIcon />
       </ListItemIcon>
-      <ListItemText primary="Sign in" />
+      <ListItemText primary="Sign out" />
     </ListItemButton>
-    <ListItemButton>
-      <ListItemIcon>
-        <AssignmentIcon />
-      </ListItemIcon>
-      <ListItemText primary="Sign Up" />
-    </ListItemButton>
+    
   </React.Fragment>
 );

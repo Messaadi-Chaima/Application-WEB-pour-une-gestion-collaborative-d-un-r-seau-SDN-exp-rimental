@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import {Dashboard} from "./Dashboard";
 import {
   Paper,
   Typography,
@@ -67,7 +68,6 @@ const useStyles = makeStyles({
     },
   },
 
- 
 });
 
 export const Topology = () => {
@@ -75,12 +75,13 @@ export const Topology = () => {
   const [icons, setIcons] = useState([]);
   const [open, setOpen] = useState(false);
   const [labelText, setLabelText] = useState("");
-  const [labelPosition, setLabelPosition] = useState({ x: 0, y: 0 });
   const [labelTexts, setLabelTexts] = useState([]);
+  const [addedIconPositions, setAddedIconPositions] = useState([]);
 
   const handleAddIcon = (icon) => {
     setIcons([...icons, icon]);
-    
+    const centerX = window.innerWidth / 2;
+    setAddedIconPositions([...addedIconPositions, { x: centerX, y: 100 }]);
   };
 
   const handleOpenModal = () => {
@@ -97,16 +98,13 @@ export const Topology = () => {
 
   const handleLabelSubmit = () => {
     setOpen(false);
-    setLabelPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     setLabelTexts([...labelTexts, labelText]);
     setLabelText("");
   };
   
-  
-
   return (
     <div>
-  
+      <Dashboard />
       <div className={classes.root}>
         <div className={classes.iconList}>
           <HostImageIcon onAdd={handleAddIcon}  />
@@ -188,20 +186,26 @@ export const Topology = () => {
           <div
             style={{
               position: "fixed",
-              top: labelPosition.y,
-              left: labelPosition.x,
+              top: 100, // Positionner les labels en haut
+              left: addedIconPositions[index]?.x || 0,
               transform: "translate(-50%, -50%)",
             }}
           >
-          <Typography variant="button" className={classes.labelText}>{text}</Typography>
-  
+            <Typography variant="button" className={classes.labelText}>{text}</Typography>
           </div>
         </Draggable>
       ))}
 
       {icons.map((icon, index) => (
         <Draggable key={index}>
-          <div className={classes.iconContainer}>
+          <div
+            style={{
+              position: "fixed",
+              top: addedIconPositions[index]?.y || 0,
+              left: addedIconPositions[index]?.x || 0,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
             <img src={icon} alt={`Icon ${index}`} className={classes.icon} />
           </div>
         </Draggable>
