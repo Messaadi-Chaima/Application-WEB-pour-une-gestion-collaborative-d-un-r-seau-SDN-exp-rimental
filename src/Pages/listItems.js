@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import LoginIcon from '@mui/icons-material/Login';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HubIcon from '@mui/icons-material/Hub';
+import TuneIcon from '@mui/icons-material/Tune';
 
 export const MainListItems = () => (
   <React.Fragment>
@@ -20,6 +21,15 @@ export const MainListItems = () => (
         <HubIcon />
       </ListItemIcon>
       <ListItemText primary="Topologie" />
+    </ListItemButton>
+    <ListItemButton component={Link} to="/Control_experimental_elements">
+      <ListItemIcon>
+        <TuneIcon />
+      </ListItemIcon>
+      <ListItemText
+        primary="Control of "
+        secondary="experimental elements"
+      />
     </ListItemButton>
   </React.Fragment>
 );

@@ -119,38 +119,14 @@ export const Topology = () => {
     setLabelText("");
   };
 
-const createSwitch = async () => {
-  try {
-    const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/<topo_id>/switches', {
-      switch_id: 'new_switch_id', // Remplacez 'new_switch_id' par l'ID réel du commutateur
-    });
-    console.log(response.data);
-    // Mettre à jour l'état ou effectuer d'autres actions si nécessaire
-  } catch (error) {
-    console.error('Error creating switch:', error);
-  }
-};
 
-const createHost = async () => {
-  const topoId = 1; // Mettez à jour avec l'ID de la topologie appropriée
-  try {
-    const response = await axios.post(`/restapi/topologies/${topoId}/hosts`, {
-      host_id: 'new_host_id', // ID de l'hôte, à remplacer par un ID unique
-      switch_id: 'switch_id', // ID du switch auquel connecter l'hôte
-      // Autres données nécessaires pour la création de l'hôte
-    });
-    console.log(response.data);
-    // Mettez à jour l'état avec les détails de l'hôte créé
-    // setState(...);
-  } catch (error) {
-    console.error('Error creating host:', error);
-  }
-};
+
+
 
 const createTopology = async () => {
   try {
-    const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/<topo_id>', {});
-    setTopoId(response.data.id); // Mettez à jour l'ID de la topologie dans l'état
+    const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/2', {});
+    //setTopoId(response.data.id); // Mettez à jour l'ID de la topologie dans l'état
     console.log(response.data);
   } catch (error) {
     console.error('Error creating topology:', error);
@@ -159,7 +135,7 @@ const createTopology = async () => {
 
 const startTopology = async () => {
   try {
-    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/${topoId}/start`, {});
+    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/2/start`, {});
     console.log(response.data);
   } catch (error) {
     console.error('Error starting topology:', error);
@@ -168,12 +144,13 @@ const startTopology = async () => {
 
 const stopTopology = async () => {
   try {
-    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/${topoId}/stop`, {});
+    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/2/stop`, {});
     console.log(response.data);
   } catch (error) {
     console.error('Error stopping topology:', error);
   }
 };
+
 
   
   return (
@@ -205,8 +182,8 @@ const stopTopology = async () => {
       <div className={classes.root}>
         <div className={classes.iconList}>
           
-          <HostImageIcon onAdd={createHost}  />
-          <SwitchImageIcon onAdd={createSwitch} />
+          <HostImageIcon onAdd={handleAddIcon}  />
+          <SwitchImageIcon onAdd={handleAddIcon} />
           <ControllerImageIcon onAdd={handleAddIcon} />
           <PortImageIcon onAdd={handleAddIcon} />
           <HorizontalRuleImageIcon />
@@ -326,10 +303,32 @@ const HorizontalRuleImageIcon = () => {
 
 const HostImageIcon = ({ onAdd }) => {
   const classes = useStyles();
+
+  const createHost = async () => {
+    try {
+      const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/2/hosts`, {
+        host_id: '1', 
+        switch_id: '1', 
+  
+      });
+      console.log(response.data);
+      // Mettez à jour l'état avec les détails de l'hôte créé
+      // setState(...);
+    } catch (error) {
+      console.error('Error creating host:', error);
+    }
+  };
+
+  const handleIconClick = () => {
+    onAdd(hostImage); 
+    createHost(); 
+  };
   
   return (
     <Tooltip title="Host" >
-      <Paper className={classes.iconContainer} elevation={3} onClick={() => onAdd(hostImage)} >
+      <Paper className={classes.iconContainer} elevation={3}
+       onClick={handleIconClick}
+      >
         <img src={hostImage} alt="Host" className={classes.icon} />
         <Typography>Host</Typography>
       </Paper>
@@ -339,9 +338,27 @@ const HostImageIcon = ({ onAdd }) => {
 
 const SwitchImageIcon = ({ onAdd }) => {
   const classes = useStyles();
+  const createSwitch = async () => {
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/2/switches', {
+        switch_id: '1', // Remplacez 'new_switch_id' par l'ID réel du commutateur
+      });
+      console.log(response.data);
+      // Mettre à jour l'état ou effectuer d'autres actions si nécessaire
+    } catch (error) {
+      console.error('Error creating switch:', error);
+    }
+  };
+
+  const handleIconClick = () => {
+    onAdd(switchImage); 
+    createSwitch(); 
+  };
+
   return (
     <Tooltip title="Switch">
-      <Paper className={classes.iconContainer} elevation={3} onClick={() => onAdd(switchImage)}>
+      <Paper className={classes.iconContainer} elevation={3}
+       onClick={handleIconClick}>
         <img src={switchImage} alt="Switch" className={classes.icon} />
         <Typography>Switch</Typography>
       </Paper>
