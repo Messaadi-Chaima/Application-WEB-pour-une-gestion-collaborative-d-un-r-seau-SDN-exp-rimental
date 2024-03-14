@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import {Dashboard} from "./Dashboard";
+import axios from 'axios';
+
 import {
   Paper,
   Typography,
@@ -7,6 +9,7 @@ import {
   Box,
   TextField,
   Fab,
+  Button,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -17,6 +20,9 @@ import AddBoxIcon from "@mui/icons-material/AddBox";
 import CancelIcon from '@mui/icons-material/Cancel';
 import {ListItemIcon } from '@material-ui/core';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import CreateIcon from '@mui/icons-material/Create';
 
 // Images
 import hostImage from "../Images/host.png";
@@ -67,6 +73,17 @@ const useStyles = makeStyles({
       transform: "scale(1.05)", 
     },
   },
+  Button: {
+    position: "fixed",
+    top: 90,
+    right: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    padding: "1rem",
+    background: "rgba(255, 255, 255, 0.8)",
+    boxShadow: "4px 0px 8px rgba(0, 0, 0, 0.1)",
+  },
 
 });
 
@@ -101,14 +118,95 @@ export const Topology = () => {
     setLabelTexts([...labelTexts, labelText]);
     setLabelText("");
   };
+
+const createSwitch = async () => {
+  try {
+    const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/<topo_id>/switches', {
+      switch_id: 'new_switch_id', // Remplacez 'new_switch_id' par l'ID réel du commutateur
+    });
+    console.log(response.data);
+    // Mettre à jour l'état ou effectuer d'autres actions si nécessaire
+  } catch (error) {
+    console.error('Error creating switch:', error);
+  }
+};
+
+const createHost = async () => {
+  const topoId = 1; // Mettez à jour avec l'ID de la topologie appropriée
+  try {
+    const response = await axios.post(`/restapi/topologies/${topoId}/hosts`, {
+      host_id: 'new_host_id', // ID de l'hôte, à remplacer par un ID unique
+      switch_id: 'switch_id', // ID du switch auquel connecter l'hôte
+      // Autres données nécessaires pour la création de l'hôte
+    });
+    console.log(response.data);
+    // Mettez à jour l'état avec les détails de l'hôte créé
+    // setState(...);
+  } catch (error) {
+    console.error('Error creating host:', error);
+  }
+};
+
+const createTopology = async () => {
+  try {
+    const response = await axios.post('http://127.0.0.1:5000/restapi/topologies/<topo_id>', {});
+    setTopoId(response.data.id); // Mettez à jour l'ID de la topologie dans l'état
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error creating topology:', error);
+  }
+};
+
+const startTopology = async () => {
+  try {
+    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/${topoId}/start`, {});
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error starting topology:', error);
+  }
+};
+
+const stopTopology = async () => {
+  try {
+    const response = await axios.post(`http://127.0.0.1:5000/restapi/topologies/${topoId}/stop`, {});
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error stopping topology:', error);
+  }
+};
+
   
   return (
     <div>
       <Dashboard />
+      <div className={classes.Button}>
+        <Tooltip title="create Topology">
+        <Paper onClick={createTopology} sx={{ display: 'flex', alignItems: 'center', cursor: "pointer" }} >
+          <CreateIcon  />
+          <Typography>create Topology</Typography>
+        </Paper>
+      </Tooltip>
+
+      <Tooltip title="Start Topology">
+        <Paper onClick={startTopology} sx={{ display: 'flex', alignItems: 'center', cursor: "pointer" }}>
+          <PlayArrowIcon  />
+          <Typography>Start Topology</Typography>
+        </Paper>
+      </Tooltip>
+
+      <Tooltip title="Stop Topology">
+        <Paper onClick={stopTopology} sx={{ display: 'flex', alignItems: 'center', cursor: "pointer" }}>
+          <StopIcon  />
+          <Typography>Stop Topology</Typography>
+        </Paper>
+      </Tooltip>
+      </div>
+      
       <div className={classes.root}>
         <div className={classes.iconList}>
-          <HostImageIcon onAdd={handleAddIcon}  />
-          <SwitchImageIcon onAdd={handleAddIcon} />
+          
+          <HostImageIcon onAdd={createHost}  />
+          <SwitchImageIcon onAdd={createSwitch} />
           <ControllerImageIcon onAdd={handleAddIcon} />
           <PortImageIcon onAdd={handleAddIcon} />
           <HorizontalRuleImageIcon />
