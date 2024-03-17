@@ -56,6 +56,9 @@ export const MyNetwork = () => {
         image: portIcon,
       },
     },
+    edges: {
+      smooth: false,
+    },
   };
 
   useEffect(() => {
