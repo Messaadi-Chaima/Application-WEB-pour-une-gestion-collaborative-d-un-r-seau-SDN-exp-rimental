@@ -17,6 +17,9 @@ export const MyNetwork = () => {
   });
 
   const options = {
+    physics: {
+      enabled: false,
+    },
     manipulation: {
       editEdge: {
         editWithoutDrag: function (data, callback) {
