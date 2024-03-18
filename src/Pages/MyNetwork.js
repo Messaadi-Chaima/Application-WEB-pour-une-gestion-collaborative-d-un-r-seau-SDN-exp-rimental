@@ -15,8 +15,9 @@ export const MyNetwork = () => {
     edges: new DataSet([]),
   });
 
-  const onAddEdge = (data, callback) => {
+  const [selectedNodeType, setSelectedNodeType] = useState(null);
 
+  const onAddEdge = (data, callback) => {
     console.log("Adding edge:", data);
     dataRef.current.edges.add(data);
     callback(data);
@@ -42,12 +43,12 @@ export const MyNetwork = () => {
     },
     manipulation: {
       enabled: false,
-      addEdge: onAddEdge, 
+      addEdge: onAddEdge,
       editEdge: {
         editWithoutDrag: true,
         callback: onEditEdge,
       },
-      deleteNode: false, 
+      deleteNode: false,
     },
     interaction: {
       navigationButtons: true,
@@ -78,18 +79,28 @@ export const MyNetwork = () => {
     edges: {
       smooth: false,
     },
-    interaction: { hover: true }
+    interaction: { hover: true },
   };
 
-  useEffect(() => {
-    if (visJsRef.current && !network) {
-      setNetwork(new Network(visJsRef.current, dataRef.current, options));
+  const onNetworkClick = (event) => {
+    if (selectedNodeType && network) {
+      const { offsetX, offsetY } = event.nativeEvent;
+      const position = network.DOMtoCanvas({ x: offsetX, y: offsetY });
+      const { x, y } = position;
+      addNode(x, y, selectedNodeType);
+      setSelectedNodeType(null);
     }
-  }, [visJsRef, network, options]);
+  };
 
-  const addNode = (group) => {
+  const addNode = (x, y, group) => {
     const newId = dataRef.current.nodes.length + 1;
-    const newNode = { id: newId, label: `${group} ${newId}`, group: group };
+    const newNode = {
+      id: newId,
+      label: `${group} ${newId}`,
+      group: group,
+      x: x,
+      y: y,
+    };
     dataRef.current.nodes.add(newNode);
     if (network) {
       network.setData(dataRef.current);
@@ -98,7 +109,10 @@ export const MyNetwork = () => {
 
   const renderAddNodeButtons = () => {
     return Object.keys(options.groups).map((groupName) => (
-      <button key={groupName} onClick={() => addNode(groupName)}>
+      <button
+        key={groupName}
+        onClick={() => setSelectedNodeType(groupName)}
+      >
         Add {groupName.charAt(0).toUpperCase() + groupName.slice(1)} Node
       </button>
     ));
@@ -108,6 +122,12 @@ export const MyNetwork = () => {
     network.addEdgeMode();
   };
 
+  useEffect(() => {
+    if (visJsRef.current && !network) {
+      setNetwork(new Network(visJsRef.current, dataRef.current, options));
+    }
+  }, [visJsRef, network, options]);
+
   return (
     <div>
       <div>
@@ -115,7 +135,11 @@ export const MyNetwork = () => {
         <button onClick={() => network.editEdgeMode()}>Edit Edge</button>
         <button onClick={onDeleteSelected}>Delete Selected</button>
       </div>
-      <div id="mynetwork" ref={visJsRef}></div>
+      <div
+        id="mynetwork"
+        ref={visJsRef}
+        onClick={onNetworkClick}
+      ></div>
       <div>{renderAddNodeButtons()}</div>
     </div>
   );
