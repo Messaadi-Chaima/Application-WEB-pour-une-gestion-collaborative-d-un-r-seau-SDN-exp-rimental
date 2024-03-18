@@ -7,6 +7,7 @@ import switchIcon from "../Images/switch.png";
 import controllerIcon from "../Images/controller.png";
 import portIcon from "../Images/port.png";
 
+
 export const MyNetwork = () => {
   const [network, setNetwork] = useState(null);
   const visJsRef = useRef(null);
@@ -93,7 +94,7 @@ export const MyNetwork = () => {
   };
 
   const addNode = (x, y, group) => {
-    const newId = dataRef.current.nodes.length + 1;
+    const newId = generateUniqueId(); // Générer un ID unique pour le nouveau nœud
     const newNode = {
       id: newId,
       label: `${group} ${newId}`,
@@ -106,6 +107,17 @@ export const MyNetwork = () => {
       network.setData(dataRef.current);
     }
   };
+  
+
+  const generateUniqueId = () => {
+    let newId;
+    do {
+      // Générer un ID aléatoire entre 1 et un nombre très élevé (par exemple, 10 millions)
+      newId = Math.floor(Math.random() * 10000000) + 1;
+    } while (dataRef.current.nodes.get(newId)); // Vérifier si l'ID existe déjà dans le DataSet
+    return newId;
+  };
+  
 
   const renderAddNodeButtons = () => {
     return Object.keys(options.groups).map((groupName) => (
