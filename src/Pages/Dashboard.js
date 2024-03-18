@@ -86,7 +86,7 @@ export const Dashboard = () => {
     <ThemeProvider theme={defaultTheme}>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
-        <AppBar position="absolute" open={open}>
+        <AppBar position="absolute" open={open}  sx={{ backgroundColor: '#1A3867' }}>
           <Toolbar
             sx={{
               pr: '24px', // keep right padding when drawer closed

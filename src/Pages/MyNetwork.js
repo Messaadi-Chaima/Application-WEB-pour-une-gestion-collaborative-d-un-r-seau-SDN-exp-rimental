@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { DataSet, Network } from "vis-network/standalone";
 import "./MyNetwork.css";
 
-// Importez vos icônes ici
 import hostIcon from "../Images/host.png";
 import switchIcon from "../Images/switch.png";
 import controllerIcon from "../Images/controller.png";
@@ -16,19 +15,39 @@ export const MyNetwork = () => {
     edges: new DataSet([]),
   });
 
+  const onAddEdge = (data, callback) => {
+
+    console.log("Adding edge:", data);
+    dataRef.current.edges.add(data);
+    callback(data);
+  };
+
+  const onDeleteSelected = () => {
+    const selectedNodes = network.getSelectedNodes();
+    const selectedEdges = network.getSelectedEdges();
+    dataRef.current.nodes.remove(selectedNodes);
+    dataRef.current.edges.remove(selectedEdges);
+    network.setData(dataRef.current);
+  };
+
+  const onEditEdge = (data, callback) => {
+    console.log("Editing edge:", data);
+    dataRef.current.edges.update(data);
+    callback(data);
+  };
+
   const options = {
     physics: {
       enabled: false,
     },
     manipulation: {
+      enabled: false,
+      addEdge: onAddEdge, 
       editEdge: {
-        editWithoutDrag: function (data, callback) {
-          console.info(data);
-          alert("The callback data has been logged to the console.");
-          // you can do something with the data here
-          callback(data);
-        },
+        editWithoutDrag: true,
+        callback: onEditEdge,
       },
+      deleteNode: false, 
     },
     interaction: {
       navigationButtons: true,
@@ -59,6 +78,7 @@ export const MyNetwork = () => {
     edges: {
       smooth: false,
     },
+    interaction: { hover: true }
   };
 
   useEffect(() => {
@@ -71,7 +91,6 @@ export const MyNetwork = () => {
     const newId = dataRef.current.nodes.length + 1;
     const newNode = { id: newId, label: `${group} ${newId}`, group: group };
     dataRef.current.nodes.add(newNode);
-    // Mettre à jour le réseau pour refléter les modifications
     if (network) {
       network.setData(dataRef.current);
     }
@@ -85,9 +104,17 @@ export const MyNetwork = () => {
     ));
   };
 
+  const addEdgeButtonHandler = () => {
+    network.addEdgeMode();
+  };
+
   return (
     <div>
-      <div id="text"></div>
+      <div>
+        <button onClick={addEdgeButtonHandler}>Add Edge</button>
+        <button onClick={() => network.editEdgeMode()}>Edit Edge</button>
+        <button onClick={onDeleteSelected}>Delete Selected</button>
+      </div>
       <div id="mynetwork" ref={visJsRef}></div>
       <div>{renderAddNodeButtons()}</div>
     </div>
