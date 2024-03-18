@@ -1,5 +1,7 @@
 #mynetwork {
-    width: 100%;
-    height: 600px; 
+    width: 83%;
+    height: 635px; 
+    float: right;
+    border: 1px solid lightgray; 
   }
   

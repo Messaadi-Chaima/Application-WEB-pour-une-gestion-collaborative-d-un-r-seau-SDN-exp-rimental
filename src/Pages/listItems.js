@@ -16,7 +16,7 @@ export const MainListItems = () => (
       </ListItemIcon>
       <ListItemText primary="Dashboard" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/Topology">
+    <ListItemButton component={Link} to="/MyNetwork">
       <ListItemIcon>
         <HubIcon />
       </ListItemIcon>

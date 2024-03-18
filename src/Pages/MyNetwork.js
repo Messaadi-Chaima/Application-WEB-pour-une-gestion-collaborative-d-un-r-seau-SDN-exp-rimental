@@ -7,6 +7,12 @@ import switchIcon from "../Images/switch.png";
 import controllerIcon from "../Images/controller.png";
 import portIcon from "../Images/port.png";
 
+import Box from '@mui/material/Box';
+import SpeedDial from '@mui/material/SpeedDial';
+import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
+
+import {Dashboard} from "./Dashboard";
 
 export const MyNetwork = () => {
   const [network, setNetwork] = useState(null);
@@ -51,10 +57,6 @@ export const MyNetwork = () => {
       },
       deleteNode: false,
     },
-    interaction: {
-      navigationButtons: true,
-      keyboard: true,
-    },
     nodes: {
       shape: "image",
       chosen: true,
@@ -94,7 +96,7 @@ export const MyNetwork = () => {
   };
 
   const addNode = (x, y, group) => {
-    const newId = generateUniqueId(); // Générer un ID unique pour le nouveau nœud
+    const newId = generateUniqueId();
     const newNode = {
       id: newId,
       label: `${group} ${newId}`,
@@ -139,19 +141,57 @@ export const MyNetwork = () => {
     }
   }, [visJsRef, network, options]);
 
+  const addEdge = () => {
+    network.addEdgeMode();
+  };
+
+  const editEdge = () => {
+    network.editEdgeMode();
+  };
+
+  const deleteSelected = () => {
+    onDeleteSelected();
+  };
+
+  const actions = [
+    { icon: <img src={hostIcon} alt="Host" />, name: 'Host', onClick: () => setSelectedNodeType('host') },
+    { icon: <img src={switchIcon} alt="Switch" />, name: 'Switch', onClick: () => setSelectedNodeType('switch') },
+    { icon: <img src={controllerIcon} alt="Controller" />, name: 'Controller', onClick: () => setSelectedNodeType('controller') },
+    { icon: <img src={portIcon} alt="Port" />, name: 'Port', onClick: () => setSelectedNodeType('port') },
+    { icon: <span>Add Edge</span>, name: 'Add Edge', onClick: addEdge },
+    { icon: <span>Edit Edge</span>, name: 'Edit Edge', onClick: editEdge },
+    { icon: <span>Delete Selected</span>, name: 'Delete Selected', onClick: deleteSelected },
+  ];
+
   return (
     <div>
-      <div>
-        <button onClick={addEdgeButtonHandler}>Add Edge</button>
-        <button onClick={() => network.editEdgeMode()}>Edit Edge</button>
-        <button onClick={onDeleteSelected}>Delete Selected</button>
-      </div>
       <div
         id="mynetwork"
         ref={visJsRef}
         onClick={onNetworkClick}
       ></div>
-      <div>{renderAddNodeButtons()}</div>
+
+      
+
+      
+      <Box sx={{ position: 'fixed', bottom: 16, right: 16 }}>
+        <SpeedDial
+          ariaLabel="SpeedDial basic example"
+          icon={<SpeedDialIcon />}
+        >
+          {actions.map((action) => (
+            <SpeedDialAction
+              key={action.name}
+              icon={action.icon}
+              tooltipTitle={action.name}
+              onClick={action.onClick}
+         
+            />
+          ))}
+        </SpeedDial>
+      </Box>
+
+      <Dashboard />
     </div>
   );
 };
