@@ -112,9 +112,8 @@ export const MyNetwork = () => {
   const generateUniqueId = () => {
     let newId;
     do {
-      // Générer un ID aléatoire entre 1 et un nombre très élevé (par exemple, 10 millions)
       newId = Math.floor(Math.random() * 10000000) + 1;
-    } while (dataRef.current.nodes.get(newId)); // Vérifier si l'ID existe déjà dans le DataSet
+    } while (dataRef.current.nodes.get(newId)); 
     return newId;
   };
   
