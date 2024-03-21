@@ -7,6 +7,8 @@ import LoginIcon from '@mui/icons-material/Login';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HubIcon from '@mui/icons-material/Hub';
 import TuneIcon from '@mui/icons-material/Tune';
+import PersonIcon from '@mui/icons-material/Person';
+import AddIcon from '@mui/icons-material/Add';
 
 export const MainListItems = () => (
   <React.Fragment>
@@ -31,11 +33,23 @@ export const MainListItems = () => (
         secondary="experimental elements"
       />
     </ListItemButton>
+    <ListItemButton component={Link} to="/Manage_Users">
+      <ListItemIcon>
+        <PersonIcon />
+      </ListItemIcon>
+      <ListItemText primary="Manage Users" />
+    </ListItemButton>
   </React.Fragment>
 );
 
-export const SecondaryListItems = () => (
+export const SecondaryListItems = ({ handleOpen }) => (
   <React.Fragment>
+    <ListItemButton onClick={() => handleOpen()}>
+      <ListItemIcon>
+        <AddIcon />
+      </ListItemIcon>
+      <ListItemText primary="New Account" />
+    </ListItemButton>
     <ListItemButton component={Link} to="/">
       <ListItemIcon>
         <LoginIcon />

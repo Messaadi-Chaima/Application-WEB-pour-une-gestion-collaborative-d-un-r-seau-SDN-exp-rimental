@@ -9,6 +9,7 @@ import portIcon from "../Images/port.png";
 import AddEdge from "../Images/add_edge.png";
 import EditEdge from "../Images/edit_edge.png";
 import Delete from "../Images/Delete.png";
+import AddLabel from "../Images/add_label.png";
 
 import Box from '@mui/material/Box';
 import SpeedDial from '@mui/material/SpeedDial';
@@ -161,9 +162,10 @@ export const MyNetwork = () => {
     { icon: <img src={switchIcon} alt="Switch" />, name: 'Add Switch', onClick: () => setSelectedNodeType('switch') },
     { icon: <img src={controllerIcon} alt="Controller" />, name: 'Add Controller', onClick: () => setSelectedNodeType('controller') },
     { icon: <img src={portIcon} alt="Port" />, name: 'Add Port', onClick: () => setSelectedNodeType('port') },
-    { icon: <img src={AddEdge} alt="AddEdge" className="add-edge-icon" />, name: 'Add Edge', onClick: addEdge },
-    { icon: <img src={EditEdge} alt="EditEdge" className="edit-edge-icon" />, name: 'Edit Edge', onClick: editEdge },
-    { icon: <img src={Delete} alt="Delete" className="Delete-icon" />, name: 'Delete Selected', onClick: deleteSelected },
+    { icon: <img src={AddEdge} alt="AddEdge" className="icon" />, name: 'Add Edge', onClick: addEdge },
+    { icon: <img src={EditEdge} alt="EditEdge" className="icon" />, name: 'Edit Edge', onClick: editEdge },
+    { icon: <img src={Delete} alt="Delete" className="icon" />, name: 'Delete Selected', onClick: deleteSelected },
+    { icon: <img src={AddLabel} alt="AddLabel" className="icon" />, name: 'Add Label' },
   ];
 
   return (

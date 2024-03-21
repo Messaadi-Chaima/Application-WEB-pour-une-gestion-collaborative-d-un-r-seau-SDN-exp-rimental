@@ -5,6 +5,7 @@ import {SignIn} from "./Pages/SignIn";
 import {Dashboard} from "./Pages/Dashboard";
 import {Control_experimental_elements} from "./Pages/Control_experimental_elements";
 import {MyNetwork} from "./Pages/MyNetwork";
+import {Manage_Users} from "./Pages/Manage_Users";
 
 import { ToastContainer } from "react-toastify";
 
@@ -18,6 +19,7 @@ function App() {
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/Control_experimental_elements" element={<Control_experimental_elements />} />
           <Route path="/MyNetwork" element={<MyNetwork />} />
+          <Route path="/Manage_Users" element={<Manage_Users />} />
         </Routes>
         </BrowserRouter>
         <ToastContainer />
