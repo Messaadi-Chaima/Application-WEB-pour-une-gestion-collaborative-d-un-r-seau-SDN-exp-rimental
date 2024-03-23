@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import {Dashboard} from "../Dashboard";
+import axios from 'axios';
+import { getUsers, deleteUsers, updateUser  } from '../../Service/userService';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import Grid from '@mui/material/Grid';
 import { useDispatch, useSelector } from 'react-redux';
@@ -40,6 +43,8 @@ export const UserList = () => {
     password: '',
   });
 
+  const [user, setUsers] = useState([]);
+
   const handleSearch = (e) => {
     setSearch(e.target.value);
   };
@@ -54,19 +59,30 @@ export const UserList = () => {
     setDeleteUserId(null);
   };
 
-  const handleSupprimerUser = (id) => {
-    dispatch(deleteUser({ id }));
-    handleCloseDeleteDialog();
+  const handleSupprimerUser = async (id) => {
+    try {
+      await deleteUsers(id);
+      setUsers(user.filter(users => users.id !== id)); // Update users state after deletion
+      handleCloseDeleteDialog();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
   };
+  
 
   const handleOpenEdit = (id) => {
     setEditUserId(id);
-    const user = users.find((user) => user.id === id);
-    setEditValues({
-      name: user.name,
-      role: user.role,
-      password: user.password,
-    });
+    const selectedUser = user.find(users => users.id === id); // Trouver l'utilisateur sélectionné
+    if (selectedUser) {
+      // Mettre à jour les valeurs d'édition avec les données de l'utilisateur sélectionné
+      setEditValues({
+        name: selectedUser.name,
+        role: selectedUser.role,
+        password: selectedUser.password,
+      });
+    } else {
+      console.error('User not found');
+    }
   };
 
   const handleCloseEdit = () => {
@@ -78,18 +94,24 @@ export const UserList = () => {
     });
   };
 
-  const handleEditUser = () => {
-    dispatch(
-      editUser({
-        id: editUserId,
-        name: editValues.name,
-        role: editValues.role,
-        password: editValues.password,
-      })
-    );
-    handleCloseEdit();
+  const handleEditUser = async () => {
+    try {
+      // Envoi de la modification au backend
+      await updateUser(editUserId, editValues); // Assurez-vous que updateUser prend en charge l'identifiant et les nouvelles valeurs
+      // Mettre à jour l'utilisateur dans l'état local
+      const updatedUsers = user.map(users => users.id === editUserId ? { ...users, ...editValues } : users);
+      setUsers(updatedUsers);
+      // Fermeture de la boîte de dialogue modale d'édition
+      handleCloseEdit();
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
   };
-
+  
+  
+  
+  
+  
   const columns = [
     { field: 'id', headerName: 'ID', width: 100 },
     { field: 'name', headerName: 'Username', width: 350 },
@@ -141,8 +163,28 @@ export const UserList = () => {
 
 
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersData = await getUsers(); // Appelez la fonction getUsers pour récupérer les utilisateurs
+        setUsers(usersData); // Mettez à jour l'état avec les utilisateurs récupérés
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, [user]); 
+
+  function getRowId(row) {
+    return row.id;
+  }
+
+
+
   return (
     <div >
+      <div style={{width: '82%', float: 'right', top:'0'}}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
         <SearchIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
         <TextField
@@ -154,12 +196,13 @@ export const UserList = () => {
       </div>
 
       <DataGrid
-        rows={users}
+        rows={user}
         columns={columns}
         pageSize={5}
         components={{
           Toolbar: GridToolbar,
         }}
+        getRowId={getRowId}
       />
 
       <Dialog
@@ -272,6 +315,10 @@ export const UserList = () => {
           </Grid>
         </Box>
       </Modal>
+
+      
+      </div>
+      <Dashboard user={user} setUsers={setUsers} />
     </div>
   );
 };

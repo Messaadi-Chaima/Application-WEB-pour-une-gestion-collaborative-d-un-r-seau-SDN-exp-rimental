@@ -27,7 +27,7 @@
     "react-vis-network-graph": "^3.0.1",
     "redux-devtools-extension": "^2.13.9",
     "vis-network": "^9.1.9",
-    "vis-network-react": "^1.3.6",
+    "vis-network-react": "^1.2.3",
     "vis-react": "^0.5.1"
   },
   "scripts": {

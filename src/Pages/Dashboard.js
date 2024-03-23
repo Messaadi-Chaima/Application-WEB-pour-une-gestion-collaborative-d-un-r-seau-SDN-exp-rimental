@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import {addUsers} from '../Service/userService';
+import { UserList } from './Redux/UserList';
 import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import MuiDrawer from '@mui/material/Drawer';
@@ -91,7 +93,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 const defaultTheme = createTheme();
 
-export const Dashboard = ({ handleOpen }) => {
+export const Dashboard = ({ handleOpen, user, setUsers}) => {
   const [open, setOpen] = React.useState(true);
   const toggleDrawer = () => {
     setOpen(!open);
@@ -127,20 +129,31 @@ export const Dashboard = ({ handleOpen }) => {
   
   const [lastUserId, setLastUserId] = useState(0);
   
-  const handleAddUser = () => {
-    const newUserId = lastUserId + 1;
-    setLastUserId(newUserId);
-    if ((values.name !== '') && (values.password !== '') && (values.role !== '')) {
-      dispatch(addUser({
-        id: newUserId,
-        name: values.name,
-        password: values.password,
-        role: values.role,
-      }));
-      setValues({ name: '', password: '', role: '' });
-      setModalOpen(false); 
-    } else {
-      setOuv(true);
+  const handleAddUser = async () => {
+    if (values.name && values.password && values.role) {
+      try {
+        const newUser = {
+          id: uuidv4(),
+          name: values.name,
+          password: values.password,
+          role: values.role,
+        };
+
+        // Appel à la fonction addUsers pour ajouter le nouvel utilisateur
+        await addUsers(newUser);
+
+        // Dispatch de l'action pour mettre à jour l'état Redux
+        dispatch({
+          type: 'ADD_USER',
+          payload: newUser,
+        });
+
+        // Réinitialisation des valeurs
+        setValues({ name: '', password: '', role: '' });
+        setModalOpen(false);
+      } catch (error) {
+        console.error('Error while adding user:', error);
+      }
     }
   };
   
