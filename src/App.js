@@ -6,6 +6,7 @@ import {Dashboard} from "./Pages/Dashboard";
 import {Control_experimental_elements} from "./Pages/Control_experimental_elements";
 import {MyNetwork} from "./Pages/MyNetwork";
 import {Manage_Users} from "./Pages/Manage_Users";
+import {List_of_saved_configurations} from "./Pages/List_of_saved_configurations";
 
 import { ToastContainer } from "react-toastify";
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/Control_experimental_elements" element={<Control_experimental_elements />} />
           <Route path="/MyNetwork" element={<MyNetwork />} />
           <Route path="/Manage_Users" element={<Manage_Users />} />
+          <Route path="/List_of_saved_configurations" element={<List_of_saved_configurations />} />
         </Routes>
         </BrowserRouter>
         <ToastContainer />

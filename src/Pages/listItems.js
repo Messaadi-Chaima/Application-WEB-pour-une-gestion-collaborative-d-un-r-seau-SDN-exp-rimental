@@ -9,6 +9,7 @@ import HubIcon from '@mui/icons-material/Hub';
 import TuneIcon from '@mui/icons-material/Tune';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
+import SaveIcon from '@mui/icons-material/Save';
 
 export const MainListItems = () => (
   <React.Fragment>
@@ -23,6 +24,14 @@ export const MainListItems = () => (
         <HubIcon />
       </ListItemIcon>
       <ListItemText primary="Topologie" />
+    </ListItemButton>
+    <ListItemButton component={Link} to="/List_of_saved_configurations">
+      <ListItemIcon>
+        <SaveIcon />
+      </ListItemIcon>
+      <ListItemText 
+      primary="List of saved"
+      secondary="configurations" />
     </ListItemButton>
     <ListItemButton component={Link} to="/Control_experimental_elements">
       <ListItemIcon>

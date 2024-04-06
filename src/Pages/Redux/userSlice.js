@@ -31,9 +31,12 @@ const userSlice = createSlice({
       if(existingUser) {
         return state.filter(user => user.id !== id);
       }
-    }
+    },
+    addSave: (state, action) => {
+      state.push(action.payload);
+    },
   }
 });
 
-export const { addUser, editUser,deleteUser,editRole } = userSlice.actions;
+export const { addUser, editUser,deleteUser,editRole, addSave } = userSlice.actions;
 export default userSlice.reducer;
