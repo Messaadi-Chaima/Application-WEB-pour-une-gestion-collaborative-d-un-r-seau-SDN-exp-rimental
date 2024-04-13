@@ -27,6 +27,8 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import { deepOrange } from '@mui/material/colors';
 
 export const UserList = () => {
   const dispatch = useDispatch();
@@ -113,14 +115,20 @@ export const UserList = () => {
   
   
   const columns = [
-    { field: 'id', headerName: 'ID', width: 100 },
-    { field: 'name', headerName: 'Username', width: 350 },
-    { field: 'role', headerName: 'Role', width: 350 },
+    { field: 'Avatar', headerName: 'Avatar', width: 90, renderCell: (params) => (
+      <div>
+          <Avatar sx={{ bgcolor: '#3399FF' }}>{params.row.name.charAt(0)}</Avatar>
+      </div>
+    
+   ), },
+    { field: 'id', headerName: 'ID', width: 300 },
+    { field: 'name', headerName: 'Username', width: 200},
+    { field: 'role', headerName: 'Role', width: 180 },
     {
       field: 'actions',
       headerName: 'Action',
       sortable: false,
-      width: 350,
+      width: 300,
       renderCell: (params) => (
         <div>
           <Grid item xs={12} sx={{ mt: 1 }}> 
@@ -166,8 +174,16 @@ export const UserList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersData = await getUsers(); // Appelez la fonction getUsers pour récupérer les utilisateurs
-        setUsers(usersData); // Mettez à jour l'état avec les utilisateurs récupérés
+        const usersData = await getUsers(); 
+        const formattedUsers = usersData.map(user => ({
+          id: user[0], 
+          name: user[1], 
+          password: user[2], 
+          role: user[3],
+        }));
+        setUsers(formattedUsers);
+        console.log(formattedUsers);
+        console.log('user', user);
       } catch (error) {
         console.error('Error fetching users:', error);
       }

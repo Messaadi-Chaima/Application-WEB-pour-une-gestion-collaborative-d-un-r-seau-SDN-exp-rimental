@@ -10,6 +10,8 @@ import TuneIcon from '@mui/icons-material/Tune';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+import axios from 'axios';
+import { useNavigate  } from "react-router-dom";
 
 export const MainListItems = () => (
   <React.Fragment>
@@ -51,20 +53,35 @@ export const MainListItems = () => (
   </React.Fragment>
 );
 
-export const SecondaryListItems = ({ handleOpen }) => (
-  <React.Fragment>
-    <ListItemButton onClick={() => handleOpen()}>
-      <ListItemIcon>
-        <AddIcon />
-      </ListItemIcon>
-      <ListItemText primary="New Account" />
-    </ListItemButton>
-    <ListItemButton component={Link} to="/">
-      <ListItemIcon>
-        <LoginIcon />
-      </ListItemIcon>
-      <ListItemText primary="Sign out" />
-    </ListItemButton>
-    
-  </React.Fragment>
-);
+export const SecondaryListItems = ({ handleOpen }) => {
+  const navigate = useNavigate(); 
+  
+  const logout = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/pythonlogin/logout');
+      if (response.data.message === 'Logged out successfully!') {
+        navigate('/');
+      }
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  return (
+    <React.Fragment>
+      <ListItemButton onClick={() => handleOpen()}>
+        <ListItemIcon>
+          <AddIcon />
+        </ListItemIcon>
+        <ListItemText primary="New Account" />
+      </ListItemButton>
+      <ListItemButton onClick={logout}>
+        <ListItemIcon>
+          <LoginIcon />
+        </ListItemIcon>
+        <ListItemText primary="Sign out" />
+      </ListItemButton>
+    </React.Fragment>
+  );
+};

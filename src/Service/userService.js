@@ -1,13 +1,17 @@
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
-const API_URL = 'http://localhost:5000/api/users'; // Mettez votre URL d'API ici
+const API_URL = 'http://localhost:5001/api/users'; // Mettez votre URL d'API ici
 
 // Fonction pour récupérer tous les utilisateurs
 export const getUsers = async () => {
   try {
     const response = await axios.get(API_URL);
-    return response.data;
-  } catch (error) {
+    // Ajoutez un identifiant unique à chaque utilisateur
+    const usersWithId = response.data.map(user => ({ ...user, id: uuidv4() }));
+    console.log(usersWithId);
+    return usersWithId;
+  }catch (error) {
     console.error('Error while fetching users:', error);
     throw error;
   }
@@ -17,6 +21,7 @@ export const getUsers = async () => {
 export const addUsers = async (userData) => {
   try {
     const response = await axios.post(API_URL, userData);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error('Error while adding user:', error);
