@@ -6,7 +6,6 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 
 export const List_of_saved_configurations = () => {
-
     const dispatch = useDispatch();
     const savedItems = useSelector((state) => state.users);
     const [values, setValues] = useState({

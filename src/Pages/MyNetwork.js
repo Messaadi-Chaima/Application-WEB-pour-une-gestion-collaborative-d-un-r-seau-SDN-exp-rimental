@@ -115,10 +115,6 @@ export const MyNetwork = () => {
     callback(newData);
   };
 
-
-  
-  
-
   const onDeleteSelected = () => {
     const selectedNodes = network.getSelectedNodes();
     const selectedEdges = network.getSelectedEdges();
@@ -163,6 +159,7 @@ export const MyNetwork = () => {
       port: {
         shape: "image",
         image: portIcon,
+        size: 10,
       },
     },
     edges: {
@@ -187,8 +184,111 @@ export const MyNetwork = () => {
     }
   };
 
+  const getFirstSwitchId = () => {
+    const nodes = dataRef.current.nodes.get(); // Obtenez tous les nœuds actuels
+    for (const node of nodes) {
+      if (node.group === 'switch') {
+        return node.id; // Retournez l'ID du premier switch trouvé
+      }
+    }
+    return null; // Retournez null s'il n'y a pas de switch dans le réseau
+  };
+  
+
   const addNode = (x, y, group) => {
-    const newId = generateUniqueId();
+    if (group !== 'host' && group !== 'switch' && group !== 'port') {
+      const newId = generateUniqueId();
+      const newNode = {
+        id: newId,
+        label: `${group} ${newId}`,
+        group: group,
+        x: x,
+        y: y,
+      };
+      dataRef.current.nodes.add(newNode);
+      if (network) {
+        network.setData(dataRef.current);
+      }
+      console.log(dataRef.current.nodes);
+    } else if(group == 'host') {
+      const newId = generateUniqueId();
+      const newNode = {
+        id: newId,
+        label: `${group} ${newId}`,
+        group: group,
+        x: x,
+        y: y,
+      };
+  
+      // Add a new host node
+      dataRef.current.nodes.add(newNode);
+  
+      // Add a new port node connected to the host node
+      const newPort1Id = generateUniqueId();
+      const newPort1 = {
+        id: newPort1Id,
+        label: `eth0`,
+        group: "port",
+        x: x - 20,
+        y: y + 90,
+      };
+      dataRef.current.nodes.add(newPort1);
+  
+      const newPort2Id = generateUniqueId();
+      const newPort2 = {
+        id: newPort2Id,
+        label: `eth1`,
+        group: "port",
+        x: x + 30,
+        y: y + 90,
+      };
+      dataRef.current.nodes.add(newPort2);
+  
+      dataRef.current.edges.add({ from: newId, to: newPort1Id });
+      dataRef.current.edges.add({ from: newId, to: newPort2Id });
+      
+      setEditNodeId(newId);
+      setEditNodeLabel(newNode.label);
+      setOpenDialog(true)  ;
+
+      if (network) {
+        network.setData(dataRef.current);
+      }
+      console.log(dataRef.current.nodes);
+    } else if(group == 'switch'){
+        const newId = generateUniqueId();
+        const newNode = {
+          id: newId,
+          label: `${group} ${newId}`,
+          group: group,
+          x: x,
+          y: y,
+        };
+        dataRef.current.nodes.add(newNode);
+        // Add 6 new port nodes connected to the switch node
+        for (let i = 0; i < 6; i++) {
+          const newPortId = generateUniqueId();
+          const newPort = {
+            id: newPortId,
+            label: `eth${i}`,
+            group: "port",
+            x: x - 50 + i * 30,
+            y: y + 90,
+          };
+          dataRef.current.nodes.add(newPort);
+
+          dataRef.current.edges.add({ from: newId, to: newPortId });
+        }
+        setEditNodeId(newId);
+        setEditNodeLabel(newNode.label);
+        setOpenDialogopenDialogSwitch(true)  ;
+
+        if (network) {
+          network.setData(dataRef.current);
+        }
+        console.log(dataRef.current.nodes);
+        } else if (group === 'port') {
+          const newId = generateUniqueId();
     const newNode = {
       id: newId,
       label: `${group} ${newId}`,
@@ -197,9 +297,21 @@ export const MyNetwork = () => {
       y: y,
     };
     dataRef.current.nodes.add(newNode);
+
+    const firstSwitchId = getFirstSwitchId(); // Obtenez l'ID du premier switch créé
+    if (firstSwitchId) {
+      const newEdge = {
+        from: newId,
+        to: firstSwitchId,
+      };
+      dataRef.current.edges.add(newEdge);
+    }
+
     if (network) {
       network.setData(dataRef.current);
     }
+    console.log(dataRef.current.nodes);
+  }
   };
 
   const generateUniqueId = () => {
