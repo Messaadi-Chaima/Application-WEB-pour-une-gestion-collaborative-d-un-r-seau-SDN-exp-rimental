@@ -139,31 +139,103 @@ export const MyNetwork = () => {
       editNode: onEditNode,
       deleteNode: false,
     },
+
     nodes: {
       shape: "image",
       chosen: true,
+      // Invisible border, 0 makes selected border dissapear
+      borderWidth: 2,
+      borderWidthSelected: 2,
+      font: {
+        align: "center",
+        color: '#240747',
+        face: "Source Sans Pro",
+        strokeWidth: 0,
+      },
+      shapeProperties: {
+        borderRadius: 6,
+        useBorderWithImage: true,
+      },
+      scaling: {
+        label: {
+          // Don't hide labels while zooming in too much (useful for image export)
+          maxVisible: Number.MAX_SAFE_INTEGER,
+        },
+      },
     },
     groups: {
       host: {
         shape: "image",
         image: hostIcon,
+        size: 20,
+        color: {
+          background: 'white',
+          border: 'white',
+          highlight: {
+            background: 'white',
+            border: 'green'
+          },
+          hover: {
+            background: "white",
+            border: "blue",
+          },
+        },
       },
       switch: {
         shape: "image",
         image: switchIcon,
+        size: 20,
+        color: {
+          background: 'white',
+          border: 'white',
+          highlight: {
+            background: 'white',
+            border: '#FFC300'
+          },
+          hover: {
+            background: "white",
+            border: "blue",
+          },
+        },
       },
       controller: {
         shape: "image",
         image: controllerIcon,
+        size: 20,
+        color: {
+          background: 'white',
+          border: 'white',
+          highlight: {
+            background: 'white',
+            border: '#C70039'
+          },
+          hover: {
+            background: "white",
+            border: "blue",
+          },
+        },
       },
       port: {
         shape: "image",
         image: portIcon,
-        size: 10,
+        size: 8,
+        color: {
+          background: 'white',
+          border: 'white',
+          highlight: {
+            background: 'white',
+            border: '#f70776'
+          },
+          hover: {
+            background: "white",
+            border: "blue",
+          },
+        },
       },
     },
     edges: {
       smooth: false,
+      color: 'red',
       font: {
         align: "top", // Pour aligner le texte au-dessus des arêtes
       },
