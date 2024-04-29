@@ -4,6 +4,7 @@ import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { useDispatch, useSelector } from 'react-redux'; 
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
+import {Box,Typography} from "@mui/material";
 
 export const List_of_saved_configurations = () => {
     const dispatch = useDispatch();
@@ -47,7 +48,14 @@ export const List_of_saved_configurations = () => {
 
 return (
     <div> 
-    <div style={{ margin: 'auto', width: '82%', marginTop: '70px' , float: 'right'}}>
+    <div style={{width: '100%',
+                margin: 'auto',
+                marginTop: '80px',
+                float: 'right'}}> 
+    <Box sx={{width: '80%', float: 'right'}}>
+    <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', mb: 2 }}>
+      List of saved configurations
+    </Typography>
     <DataGrid
         rows={savedItems}
         columns={columns}
@@ -57,11 +65,11 @@ return (
         }}
         getRowId={getRowId}
       />
-    
+    </Box>
+
     </div>
     <Dashboard />
     </div>
-
     );
 };
 

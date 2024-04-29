@@ -13,53 +13,86 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import axios from 'axios';
 import { useNavigate  } from "react-router-dom";
+const itemsStyle = {
+  color: "white",
+  backgroundColor: "#036c9e",
 
-export const MainListItems = () => (
-  <React.Fragment>
-    <ListItemButton component={Link} to="/Dashboard">
+  "&:hover": {
+    color: "#ADD8E6",
+  },
+};
+const textStyle = {
+  fontSize: "18px",
+};
+
+export const MainListItems = () => {
+  const storedUsername = localStorage.getItem('username');
+  const storedRole = localStorage.getItem('role');
+  console.log(storedUsername);
+  console.log(storedRole);
+
+  return (
+    <React.Fragment>
+    
+    <ListItemButton sx={itemsStyle}  component={Link} to="/Home">
       <ListItemIcon>
-        <DashboardIcon />
+        <DashboardIcon style={{ color: "#fff" }}/>
       </ListItemIcon>
-      <ListItemText primary="Dashboard" />
+      <ListItemText sx={textStyle} primary="Home" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/MyNetwork">
-      <ListItemIcon>
-        <HubIcon />
-      </ListItemIcon>
-      <ListItemText primary="Topologie" />
-    </ListItemButton>
-    <ListItemButton component={Link} to="/List_of_saved_configurations">
-      <ListItemIcon>
-        <SaveIcon />
-      </ListItemIcon>
-      <ListItemText 
-      primary="List of saved"
-      secondary="configurations" />
-    </ListItemButton>
-    <ListItemButton component={Link} to="/Control_experimental_elements">
-      <ListItemIcon>
-        <TuneIcon />
-      </ListItemIcon>
-      <ListItemText
-        primary="Control of "
-        secondary="experimental elements"
-      />
-    </ListItemButton>
-    <ListItemButton component={Link} to="/Manage_Users">
-      <ListItemIcon>
-        <PersonIcon />
-      </ListItemIcon>
-      <ListItemText primary="Manage Users" />
-    </ListItemButton>
+    {storedRole === "Experimentator" && (
+      <React.Fragment>
+        {console.log('storedRole', storedRole)}
+        <ListItemButton sx={itemsStyle} component={Link} to="/MyNetwork">
+          <ListItemIcon>
+            <HubIcon style={{ color: "#fff" }}/>
+          </ListItemIcon>
+          <ListItemText sx={textStyle} primary="Topologie" />
+        </ListItemButton>
+        <ListItemButton sx={itemsStyle} component={Link} to="/List_of_saved_configurations">
+          <ListItemIcon>
+            <SaveIcon style={{ color: "#fff" }}/>
+          </ListItemIcon>
+          <ListItemText sx={textStyle}
+            primary="List of saved"
+            secondary="configurations"
+          />
+        </ListItemButton>
+        <ListItemButton sx={itemsStyle} component={Link} to="/Control_experimental_elements">
+          <ListItemIcon>
+            <TuneIcon style={{ color: "#fff" }}/>
+          </ListItemIcon>
+          <ListItemText sx={textStyle}
+            primary="Control of "
+            secondary="experimental elements"
+          />
+        </ListItemButton>
+      </React.Fragment>
+    )}
+    {storedRole === "Administrateur" && (
+      <ListItemButton sx={itemsStyle} component={Link} to="/Manage_Users">
+        <ListItemIcon>
+          <PersonIcon style={{ color: "#fff" }}/>
+        </ListItemIcon>
+        <ListItemText sx={textStyle} primary="Manage Users" />
+      </ListItemButton>
+    )}
   </React.Fragment>
-);
+  );
+};
 
-export const SecondaryListItems = ({ handleOpen }) => {
+export const SecondaryListItems = ({handleOpen}) => {
+  const storedUsername = localStorage.getItem('username');
+  const storedRole = localStorage.getItem('role');
+  console.log(storedUsername);
+  console.log(storedRole);
   const navigate = useNavigate(); 
   
   const logout = async () => {
     try {
       const response = await axios.post('http://localhost:5000/pythonlogin/logout');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
       if (response.data.message === 'Logged out successfully!') {
         navigate('/');
       }
@@ -71,17 +104,19 @@ export const SecondaryListItems = ({ handleOpen }) => {
 
   return (
     <React.Fragment>
-      <ListItemButton onClick={() => handleOpen()}>
+      {storedRole === "Administrateur" && (
+      <ListItemButton sx={itemsStyle} onClick={() => handleOpen()}>
         <ListItemIcon>
-          <AddIcon />
+          <AddIcon style={{ color: "#fff" }}/>
         </ListItemIcon>
-        <ListItemText primary="New Account" />
+        <ListItemText sx={textStyle} primary="New Account" />
       </ListItemButton>
-      <ListItemButton onClick={logout}>
+      )}
+      <ListItemButton sx={itemsStyle} onClick={logout}>
         <ListItemIcon>
-          <LoginIcon />
+          <LoginIcon style={{ color: "#fff" }}/>
         </ListItemIcon>
-        <ListItemText primary="Sign out" />
+        <ListItemText sx={textStyle} primary="Sign out" />
       </ListItemButton>
     </React.Fragment>
   );

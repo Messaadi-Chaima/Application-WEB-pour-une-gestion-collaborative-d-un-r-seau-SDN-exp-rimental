@@ -200,17 +200,11 @@ export const UserList = () => {
 
   return (
     <div >
-      <div style={{width: '82%', float: 'right', top:'0'}}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
-        <SearchIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
-        <TextField
-          variant="standard"
-          label="Rechercher"
-          id="input-with-sx"
-          onChange={handleSearch}
-        />
-      </div>
-
+      <div style={{width: '100%',
+                margin: 'auto',
+                marginTop: '80px',
+                float: 'right'}}> 
+<Box sx={{width: '80%', float: 'right'}}>
       <DataGrid
         rows={user}
         columns={columns}
@@ -220,7 +214,7 @@ export const UserList = () => {
         }}
         getRowId={getRowId}
       />
-
+</Box>
       <Dialog
         open={openDeleteDialog}
         onClose={handleCloseDeleteDialog}

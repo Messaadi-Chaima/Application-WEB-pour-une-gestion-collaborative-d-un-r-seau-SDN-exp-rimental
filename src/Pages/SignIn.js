@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect  } from 'react';
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
@@ -34,8 +34,19 @@ export const SignIn = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(""); 
+  const [role, setRole] = useState(""); 
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem('username');
+    const storedRole = localStorage.getItem('role');
+    if (storedUsername && storedRole) {
+      navigate('/Dashboard');
+      console.log(storedUsername);
+      console.log(storedRole);
+    } 
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,6 +62,9 @@ export const SignIn = () => {
       
       console.log(response.data);
       if (response.data.message === 'Logged in successfully!') {
+        // Stocker le nom d'utilisateur et le rôle dans le localStorage
+        localStorage.setItem('username', username);
+        localStorage.setItem('role', response.data.role);
         navigate('/Dashboard');
       } else {
         setError('Incorrect username/password!');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import {addUsers} from '../Service/userService';
 import { UserList } from './Redux/UserList';
 import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
@@ -34,22 +34,14 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { v4 as uuidv4 } from 'uuid';
 
-function Copyright(props) {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
-
 const drawerWidth = 240;
 
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
+  position: 'fixed', // Fixe la position de l'AppBar
+  width: '100%', // Remplit toute la largeur de la fenêtre
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -67,9 +59,14 @@ const AppBar = styled(MuiAppBar, {
 const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
   ({ theme, open }) => ({
     '& .MuiDrawer-paper': {
-      position: 'relative',
+      position: 'fixed', // Fixe la position du Drawer
+      top: '0', // Aligne le haut du Drawer au haut de la fenêtre
+      left: '0', // Aligne la gauche du Drawer au côté gauche de la fenêtre
+      bottom: '0', // Remplit toute la hauteur de la fenêtre
+      zIndex: 'auto', // Ajuste le z-index au besoin
       whiteSpace: 'nowrap',
       width: drawerWidth,
+      backgroundColor: "#036c9e",
       transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.enteringScreen,
@@ -101,6 +98,7 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
 
   const [modalOpen, setModalOpen] = useState(false); 
 
+  
   const handleOpenModal = () => {
     setModalOpen(true);
   };
@@ -181,8 +179,6 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
     event.preventDefault();
   };
 
-  
-
   return (
     <ThemeProvider theme={defaultTheme}>
       <Box sx={{ display: 'flex' }}>
@@ -252,14 +248,6 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
           }}
         >
           <Toolbar />
-          <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Grid container spacing={3}>
-             
-              
-             
-            </Grid>
-            <Copyright sx={{ pt: 4 }} />
-          </Container>
         </Box>
       </Box>
 

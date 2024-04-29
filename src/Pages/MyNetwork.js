@@ -42,6 +42,10 @@ import { Dashboard } from "./Dashboard";
 import {addSave} from '../Pages/Redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { v4 as uuidv4 } from 'uuid'; 
+import IosShareIcon from '@mui/icons-material/IosShare';
+import { IconButton,Chip } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import copy from "clipboard-copy";
 
 export const MyNetwork = () => {
   const [network, setNetwork] = useState(null);
@@ -134,7 +138,7 @@ export const MyNetwork = () => {
       enabled: false,
     },
     manipulation: {
-      enabled: true,
+      enabled: false,
       addEdge: onAddEdge,
       editNode: onEditNode,
       deleteNode: false,
@@ -545,10 +549,54 @@ export const MyNetwork = () => {
     };
   }, [network]);
 
- 
-  
-  
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'H') {
+        setSelectedNodeType('host');
+      }
+      if (event.key === 'S') {
+        setSelectedNodeType('switch');
+      }
+      if (event.key === 'P') {
+        setSelectedNodeType('port');
+      }
+      if (event.key === 'C') {
+        setSelectedNodeType('controller');
+      }
+      if (event.key === 'E') {
+        if (network) {
+          network.addEdgeMode();
+        } 
+      }
+        if (event.key === 'D') {
+          deleteSelected();
+        }
+        if (event.key === 'A') {
+          selectAll();
+        }
+        if (event.key === 'Z') {
+          resetZoom();
+        }    
+        };
+    document.addEventListener('keypress', handleKeyPress);
+    return () => {
+      document.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [network]);
 
+  const selectAll = () => {
+    if (network) {
+      const allNodes = dataRef.current.nodes.getIds();
+      const allEdges = dataRef.current.edges.getIds();
+      network.setSelection({ nodes: allNodes, edges: allEdges });
+    }
+  };
+  const resetZoom = () => {
+    if (network) {
+      network.fit(); // Réinitialise le niveau de zoom du réseau
+    }
+  };
+  
   const actions = [
     { icon: <img src={hostIcon} alt="Host" />, name: 'Add Host', onClick: () => setSelectedNodeType('host') },
     { icon: <img src={switchIcon} alt="Switch" />, name: 'Add Switch', onClick: () => setSelectedNodeType('switch') },
@@ -577,14 +625,95 @@ export const MyNetwork = () => {
     setOpenDialogopenDialogSave(false);
   }
 
+  const [open, setOpen] = useState(false);
+
+  const handleShare = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+  const handleCopy = (pageUrl) => {
+    navigator.clipboard.writeText(pageUrl);
+    setCopied(true);
+  };
+
   return (
     <div>
-      <div
-        id="mynetwork"
-        ref={visJsRef}
-        onClick={onNetworkClick}
-      ></div>
-
+        <div 
+        style={{width: '100%', float: 'right', top:'0'}}
+          id="mynetwork"
+          ref={visJsRef}
+          onClick={onNetworkClick}
+        ></div>
+{/*------------Bouton Share--------------------*/}
+<Modal open={open} onClose={handleClose}>
+  <Box
+    sx={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 500,
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      p: 4,
+      borderRadius: 4,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+    }}
+  >
+    <Box display="flex" alignItems="center" gap={2}>
+      <IosShareIcon sx={{ fontSize: 35 }} />
+      <Typography variant="h6" gutterBottom>
+        Share Options
+      </Typography>
+    </Box>
+    <Box display="flex" flexDirection="column" gap={2}>
+      <Box display="flex" alignItems="center">
+        <Typography variant="subtitle1">Anyone with this link can edit:</Typography>    
+      </Box>
+      <Box display="flex" alignItems="center">
+        <Typography variant="subtitle1">http://localhost:3000/MyNetwork/edit</Typography>
+        <Chip
+          label="Edit"
+          variant="outlined"
+          color="primary"
+          size="small"
+          sx={{ ml: 2 }}
+        />
+        <Tooltip title="Copy link">
+          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork/edit")}>
+            <ContentCopyIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+    <Box display="flex" flexDirection="column" gap={2}>
+      <Box display="flex" alignItems="center">
+        <Typography variant="subtitle1">Anyone with this link can view Only:</Typography>
+      </Box>
+      <Box display="flex" alignItems="center">
+        <Typography variant="subtitle1">http://localhost:3000/MyNetwork/view</Typography>
+        <Chip
+          label="View"
+          variant="outlined"
+          color="primary"
+          size="small"
+          sx={{ ml: 2 }}
+        />
+        <Tooltip title="Copy link">
+          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork/view")}>
+            <ContentCopyIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  </Box>
+</Modal>
+{/*-------------Host Details-----------------------*/}
 <Modal open={openDialog} onClose={handleCloseDialog}>
         <Box
           sx={{
@@ -726,7 +855,7 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
+{/*----------------------Controller Details---------------------------------*/}
       <Modal open={openDialogcontroller} onClose={handleCloseDialogcontroller}>
         <Box
           sx={{
@@ -742,7 +871,7 @@ export const MyNetwork = () => {
         >
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
           <img src={controllerIcon} alt="Controller" style={{ width: 35, marginRight: 8 }} />
-          controller Details
+          Controller Details
          </Typography>
          <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -844,8 +973,7 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
-
+{/*--------------------Link Details------------------------------*/}
       <Modal open={openDialogEdge} onClose={handleCloseDialogEdge}>
         <Box
           sx={{
@@ -936,8 +1064,7 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
-
+{/*--------------------Port Details------------------------------*/}
       <Modal open={openDialogPort} onClose={handleCloseDialogPort}>
         <Box
           sx={{
@@ -994,11 +1121,7 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
-
-
-
-
+{/*---------------------SpeedDial------------------------------*/}
       <Box sx={{ position: 'fixed', bottom: 16, right: 16 }}>
         <SpeedDial
           ariaLabel="SpeedDial basic example"
@@ -1014,12 +1137,11 @@ export const MyNetwork = () => {
           ))}
         </SpeedDial>
       </Box>
-
+{/*------------------Boutons: Run Stop Save Share---------*/}
       <ToggleButtonGroup
         aria-label="device"
         sx={{ position: 'fixed', top: 80, left: "50%", }}
         >
-          
       <Tooltip title="Save an Experience Configuration ">
         <ToggleButton value="save" aria-label="save">
           <SaveIcon onClick={handleSaveClick}/>
@@ -1035,9 +1157,13 @@ export const MyNetwork = () => {
           <StopIcon />
         </ToggleButton>
         </Tooltip>
-
+        <Tooltip title="Share">
+        <ToggleButton value="Share" aria-label="Share">
+          <IosShareIcon onClick={handleShare} />
+        </ToggleButton>
+        </Tooltip>
       </ToggleButtonGroup>
-
+{/*-------------------------Model Save---------------------------*/}
       <Modal open={openDialogSave} onClose={handleCloseDialogSave}>
         <Box
           sx={{
@@ -1071,7 +1197,6 @@ export const MyNetwork = () => {
                 onChange={(e) => setValues({ ...values, name: e.target.value })}
               />
             </Grid>
-
             <Grid item xs={6}>
               <Button onClick={handleCloseDialogSave} fullWidth>Cancel</Button>
             </Grid>
@@ -1081,7 +1206,7 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
+{/*-------------------------Switch Details---------------------------*/}
       <Modal open={openDialogSwitch} onClose={handleCloseDialogSwitch}>
         <Box
           sx={{
@@ -1102,10 +1227,8 @@ export const MyNetwork = () => {
           <img src={switchIcon} alt="Switch" style={{ width: 35, marginRight: 8 }} />
             Switch 
           </Typography>
-
           <Grid item xs={12}>
               <TextField
-                
                 margin="dense"
                 id="Hostname"
                 label="Hostname"
@@ -1120,7 +1243,6 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                
                 margin="dense"
                 id="DPID"
                 label="DPID"
@@ -1153,7 +1275,6 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                
                 margin="dense"
                 id="IPAddressSwitch"
                 label="IP Address"
@@ -1168,7 +1289,6 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                
                 margin="dense"
                 id="DPCTLPort"
                 label="DPCTL Port"
@@ -1200,7 +1320,6 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
             <TextField
-                
                 margin="dense"
                 id="StartCommandSwitch"
                 label="Start Command"
@@ -1216,8 +1335,7 @@ export const MyNetwork = () => {
               />
             </Grid>
             <Grid item xs={12}>
-            <TextField
-                
+            <TextField   
                 margin="dense"
                 id="StopCommandSwitch"
                 label="Stop Command"
@@ -1241,8 +1359,6 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
-
- 
       <Dashboard />
     </div>
   );

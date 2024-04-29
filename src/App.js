@@ -7,6 +7,7 @@ import {Control_experimental_elements} from "./Pages/Control_experimental_elemen
 import {MyNetwork} from "./Pages/MyNetwork";
 import {Manage_Users} from "./Pages/Manage_Users";
 import {List_of_saved_configurations} from "./Pages/List_of_saved_configurations";
+import {Home} from "./Pages/Home";
 
 import { ToastContainer } from "react-toastify";
 
@@ -22,6 +23,7 @@ function App() {
           <Route path="/MyNetwork" element={<MyNetwork />} />
           <Route path="/Manage_Users" element={<Manage_Users />} />
           <Route path="/List_of_saved_configurations" element={<List_of_saved_configurations />} />
+          <Route path="/Home" element={<Home />} />
         </Routes>
         </BrowserRouter>
         <ToastContainer />
