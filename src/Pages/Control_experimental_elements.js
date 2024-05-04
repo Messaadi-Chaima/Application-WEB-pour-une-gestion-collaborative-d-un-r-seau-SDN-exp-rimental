@@ -4,6 +4,7 @@ import TextField from '@mui/material/TextField';
 import axios from 'axios'; 
 import { Button} from "@mui/material";
 import DatasetIcon from '@mui/icons-material/Dataset';
+import "./style.css";
 
 export const Control_experimental_elements  = () => {
   const [responseText, setResponseText] = useState(""); // État pour stocker la réponse de la requête
@@ -13,20 +14,44 @@ export const Control_experimental_elements  = () => {
   const fetchData = async () => {
     if (inputText.trim().toLowerCase() === "pingall") {
       try {
-        const response = await axios.get('http://127.0.0.1:5000/restapi/topologies/2/pingall');
-        setResponseText(prevText => prevText + response.data.result + "\n"); // Concaténer les nouveaux résultats avec les anciens et passer à la ligne
+        const response = await axios.get('http://127.0.0.1:5002/restapi/topologies/1/pingall');
+        const result = response.data.result;
+        if (result === 0) {
+          setResponseText(prevText => prevText + `Ping: testing ping reachability\nResults: ${result}% dropped\n`);
+        } else {
+          setResponseText(prevText => prevText + `Ping: testing ping reachability\nResults: ${result}% dropped\n`);
+        }
       } catch (error) {
         console.error('Error fetching pingall:', error);
       }
+    } else if (inputText.trim().toLowerCase().startsWith("ping ")) {
+      // Extracting source and destination hosts from the input
+      const commandParts = inputText.trim().split(" ");
+      if (commandParts.length === 3) {
+        const sourceHost = commandParts[1];
+        const destHost = commandParts[2];
+        try {
+          const response = await axios.post('http://127.0.0.1:5002/restapi/topologies/1/ping', {
+            source_host: sourceHost,
+            dest_host: destHost
+          });
+          const result = response.data.message ? response.data.message : response.data.error;
+          setResponseText(prevText => prevText + result + "\n");
+        } catch (error) {
+          console.error('Error executing ping command:', error);
+        }
+      } else {
+        setResponseText(prevText => prevText + "Please specify source and destination hosts for ping command\n");
+      }
     } else if (inputText.trim().toLowerCase() === "nodes") {
       try {
-        const response = await axios.get('http://127.0.0.1:5000/restapi/topologies/2/hosts/details');
-        const hostsDetails = response.data.hosts.map(host => {
-          return `${host.name} - IP: ${host.ip}`;
+        const response = await axios.get('http://127.0.0.1:5002/restapi/topologies/1/nodes');
+        const nodesDetails = response.data.nodes.map(node => {
+          return `${node.name} - Type: ${node.type}`;
         });
-        setResponseText(prevText => prevText + hostsDetails.join("\n") + "\n"); // Concaténer les nouveaux détails d'hôtes avec les anciens et passer à la ligne
+        setResponseText(prevText => prevText + `Available nodes are:\n${nodesDetails.join("\n")}\n`);
       } catch (error) {
-        console.error('Error fetching host details:', error);
+        console.error('Error fetching nodes details:', error);
       }
     } else {
       console.log("Text is not 'pingall' or 'nodes', cannot fetch data");
@@ -34,43 +59,35 @@ export const Control_experimental_elements  = () => {
   };
 
   return (
-    <div>
+    <div className="container">
+      <div className="input-container">
+        <TextField
+          fullWidth
+          id="experiment-input"
+          label="Enter a command to control experimental elements"
+          placeholder="with commands such as: pingall, nodes..."
+          multiline
+          variant="filled"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          sx={{ marginBottom: "1rem" }}
+        />
+        <div className="button-container">
+          <Button
+            variant="contained"
+            startIcon={<DatasetIcon />}
+            onClick={fetchData}
+            className="fetch-button" 
+          >
+          Fetch Data
+          </Button>
+        </div>
+      </div>
+      <div className="response-container">
+        <pre>{responseText}</pre>
+      </div>
       <Dashboard />
-      <TextField
-        fullWidth 
-        id="filled-textarea"
-        label="Control of experimental elements"
-        placeholder="with commands such as: pingall, nodes..."
-        multiline
-        variant="filled"
-        value={inputText} 
-        onChange={(e) => setInputText(e.target.value)} 
-        sx={{ width: '50%', position: 'absolute', top: '22%', right: '10px' }}
-      />
-      <Button 
-        variant="outlined"
-        startIcon={<DatasetIcon />}
-        sx={{position: 'absolute', top: '35%', right: '40%' }}
-        onClick={fetchData} 
-      >
-        Fetch Data
-      </Button> 
-      <div style={{ 
-        marginTop: "1rem", 
-        width: '50%', 
-        position: 'absolute', 
-        top: '40%', 
-        left: '49%',
-        padding: '1rem',
-        borderRadius: '5px',
-        border: '1px solid #ccc',
-        backgroundColor: '#f9f9f9',
-        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-        whiteSpace: 'pre-wrap' // Pour conserver les sauts de ligne dans le texte
-      }}>
-        {responseText}
-      </div> 
     </div>
   );
 };
-export default Control_experimental_elements ;
+export default Control_experimental_elements;

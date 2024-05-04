@@ -38,8 +38,9 @@ export const Home = () => {
           Description 
           </Typography>
           <Typography variant="subtitle1" gutterBottom>
-          
-      </Typography>
+          A web application is integrated into Mininet to enable users to manage and
+          control simulated networks in Mninet via an intuitive web interface.
+          </Typography>
         </Box>
         <Box sx={{ width: '50%', margin: 'auto'}}>
           <Typography variant="h4" component="h1" gutterBottom sx={{mb: 2 }}>

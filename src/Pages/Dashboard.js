@@ -178,7 +178,7 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
-
+  
   return (
     <ThemeProvider theme={defaultTheme}>
       <Box sx={{ display: 'flex' }}>
@@ -238,15 +238,11 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
         <Box
           component="main"
           sx={{
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'light'
-                ? theme.palette.grey[100]
-                : theme.palette.grey[900],
             flexGrow: 1,
             height: '100vh',
             overflow: 'auto',
           }}
-        >
+    >
           <Toolbar />
         </Box>
       </Box>
@@ -272,7 +268,6 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
             boxShadow: 24,
             p: 4,
             }}>
-              
              
             <Typography component="h1" variant="h5" sx={{ mb: 2, textAlign: 'center', marginY: '20px' }}>
               Create a new account

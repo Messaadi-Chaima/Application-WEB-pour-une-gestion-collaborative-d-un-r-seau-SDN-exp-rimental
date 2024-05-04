@@ -4,13 +4,14 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import { Link } from 'react-router-dom';
-import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HubIcon from '@mui/icons-material/Hub';
 import TuneIcon from '@mui/icons-material/Tune';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import axios from 'axios';
 import { useNavigate  } from "react-router-dom";
 const itemsStyle = {
@@ -34,7 +35,7 @@ export const MainListItems = () => {
   return (
     <React.Fragment>
     
-    <ListItemButton sx={itemsStyle}  component={Link} to="/Home">
+    <ListItemButton sx={itemsStyle}  component={Link} to="/Home" >
       <ListItemIcon>
         <DashboardIcon style={{ color: "#fff" }}/>
       </ListItemIcon>
@@ -67,6 +68,12 @@ export const MainListItems = () => {
             secondary="experimental elements"
           />
         </ListItemButton>
+        <ListItemButton sx={itemsStyle} component={Link} to="/Test">
+        <ListItemIcon>
+          <TerminalIcon style={{ color: "#fff" }}/>
+        </ListItemIcon>
+        <ListItemText sx={textStyle} primary="Web Terminals" />
+      </ListItemButton>
       </React.Fragment>
     )}
     {storedRole === "Administrateur" && (
@@ -114,7 +121,7 @@ export const SecondaryListItems = ({handleOpen}) => {
       )}
       <ListItemButton sx={itemsStyle} onClick={logout}>
         <ListItemIcon>
-          <LoginIcon style={{ color: "#fff" }}/>
+          <LogoutIcon style={{ color: "#fff" }}/>
         </ListItemIcon>
         <ListItemText sx={textStyle} primary="Sign out" />
       </ListItemButton>

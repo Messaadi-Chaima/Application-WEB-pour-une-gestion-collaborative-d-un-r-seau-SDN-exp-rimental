@@ -46,6 +46,10 @@ import IosShareIcon from '@mui/icons-material/IosShare';
 import { IconButton,Chip } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import copy from "clipboard-copy";
+import PauseIcon from '@mui/icons-material/Pause';
+import ReplayIcon from '@mui/icons-material/Replay';
+
+import axios from 'axios';
 
 export const MyNetwork = () => {
   const [network, setNetwork] = useState(null);
@@ -54,6 +58,125 @@ export const MyNetwork = () => {
     nodes: new DataSet([]),
     edges: new DataSet([]),
   });
+
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const response = await axios.get('http://localhost:5002/check-connection'); // Utilisez axios.get au lieu de fetch
+        if (response.status === 200) {
+          setIsBackendConnected(true);
+        } else {
+          setIsBackendConnected(false);
+        }
+      } catch (error) {
+        setIsBackendConnected(false);
+      }
+    };
+  
+    checkConnection();
+
+    const interval = setInterval(checkConnection, 5000); // Vérifier la connexion toutes les 5 secondes
+
+  // Nettoyage de l'intervalle pour éviter les fuites de mémoire
+  return () => clearInterval(interval);
+  }, []);
+  
+
+
+    const initializeTopology = async () => {
+      try {
+        const response = await axios.get('http://localhost:5002/restapi/topologies/1/config');
+        const topologyData = response.data;
+        console.log(topologyData)
+        // Accédez aux données de la topologie
+        const { hosts, switches, host_switch_links } = topologyData;
+        
+
+        // Parcourez chaque hôte
+        for (const hostId in hosts) {
+          if (Object.hasOwnProperty.call(hosts, hostId)) {
+            const host = hosts[hostId];
+            console.log(`Hôte ID: ${hostId}`);
+            
+            // Créez le nœud de l'hôte
+            const newHostNode = {
+              id: hostId, // ID du nœud est l'ID de l'hôte
+              label: `Host ${hostId}`, // Étiquette du nœud
+              group: 'host', // Groupe du nœud (hôte)
+              x: host.position.x, // Position x avec décalage
+              y: host.position.y, // Position y avec décalage
+            };
+            dataRef.current.nodes.add(newHostNode); // Ajoutez le nœud de l'hôte à dataRef.current.nodes
+            
+            // Parcourez chaque interface de l'hôte
+            host.intfs.forEach(intf => {
+              console.log(`- Port (Interface): ${intf.name}`);
+
+              // Créez le nœud du port
+              const newPortNode = {
+                id: `${hostId}-${intf.name}`, // ID du nœud est composé de l'ID de l'hôte et de l'interface
+                label: `${intf.name}`, // Étiquette du nœud
+                group: 'port', // Groupe du nœud (port)
+                x: intf.x, // Position x avec décalage
+                y: intf.y, // Position y avec décalage
+              };
+              dataRef.current.nodes.add(newPortNode); // Ajoutez le nœud du port à dataRef.current.nodes
+
+              // Ajoutez un bord (edge) entre le nœud de l'hôte et le nœud du port
+              dataRef.current.edges.add({ from: hostId, to: `${hostId}-${intf.name}` });
+            });
+          
+          }
+        }
+       
+        // Parcourez chaque commutateur
+        for (const switchId in switches) {
+          if (Object.hasOwnProperty.call(switches, switchId)) {
+            const switchObj = switches[switchId];
+            console.log(`Commutateur ID: ${switchId}`);
+
+            // Créez le nœud du commutateur
+            const newSwitchNode = {
+              id: switchId, // ID du nœud est l'ID du commutateur
+              label: `Switch ${switchId}`, // Étiquette du nœud
+              group: 'switch', // Groupe du nœud (commutateur)
+              x: switchObj.position.x, // Position x avec décalage
+              y: switchObj.position.y, // Position y avec décalage
+            };
+            dataRef.current.nodes.add(newSwitchNode); // Ajoutez le nœud du commutateur à dataRef.current.nodes
+
+            // Parcourez chaque interface du commutateur
+            switchObj.intfs.forEach(intf => {
+              //console.log(`- Port (Interface): ${intf.name}`);
+              //console.log(`- ETH POS (Interface): ${intf.x}`);
+              // Créez le nœud du port
+              const newPortNode = {
+                id: `${switchId}-${intf.name}`, // ID du nœud est composé de l'ID du commutateur et de l'interface
+                label: `${intf.name}`, // Étiquette du nœud
+                group: 'port', // Groupe du nœud (port)
+                x: intf.x, // Position x avec décalage
+                y: intf.y, // Position y avec décalage
+              };
+              dataRef.current.nodes.add(newPortNode); // Ajoutez le nœud du port à dataRef.current.nodes
+
+              // Ajoutez un bord (edge) entre le nœud du commutateur et le nœud du port
+              dataRef.current.edges.add({ from: switchId, to: `${switchId}-${intf.name}` });
+            });
+           
+          }
+        }
+        // Ajoutez les arêtes entre les hôtes et les commutateurs en fonction de host_switch_links
+         host_switch_links.forEach(link => {
+          const { host, switch: switchId, host_intf, switch_intf } = link;
+          // Ajoutez un bord (edge) entre le port de l'hôte et le port du commutateur
+          dataRef.current.edges.add({ from: `${host}-${host_intf}`, to: `${switchId}-${switch_intf}` });
+        });
+      } catch (error) {
+       
+      }
+    };
 
   const [selectedNodeType, setSelectedNodeType] = useState(null);
   const [editNodeId, setEditNodeId] = useState(null);
@@ -106,18 +229,63 @@ export const MyNetwork = () => {
     Stop_Command: '',
   });
 
-  const onAddEdge = (data, callback) => {
+
+
+
+
+  const onAddEdge = async (data, callback) => {
     console.log("Adding edge:", data);
   
+    // Récupérer les informations sur les nœuds et les ports
+    const fromNode = dataRef.current.nodes.get(data.from);
+    const toNode = dataRef.current.nodes.get(data.to);
+  
+    // Récupérer les identifiants des nœuds précédents du nœud de départ (fromNode)
+    const previousNodesFrom = dataRef.current.edges
+      .get({ filter: edge => edge.to === data.from })
+      .map(edge => dataRef.current.nodes.get(edge.from));
+  
+    // Récupérer les identifiants des nœuds précédents du nœud d'arrivée (toNode)
+    const previousNodesTo = dataRef.current.edges
+      .get({ filter: edge => edge.to === data.to })
+      .map(edge => dataRef.current.nodes.get(edge.from));
+  
+    console.log("From node:", fromNode);
+    console.log("To node:", toNode);
+    console.log("Previous nodes from:", previousNodesFrom);
+    console.log("Previous nodes to:", previousNodesTo);
+  
+    const switchId = previousNodesFrom[0]?.id.toString(); // ID du premier nœud précédent du nœud de départ
+    const hostId = previousNodesTo[0]?.id.toString(); // ID du premier nœud précédent du nœud d'arrivée
+    const switchlabel = fromNode.label; // ID du premier nœud précédent du nœud de départ
+    const hostlabel = toNode.label; // ID du premier nœud précédent du nœud d'arrivée
+    console.log(switchId);
+    console.log(hostId);
+    console.log(switchlabel);
+    console.log(hostlabel);
+    try {
+      const response = await axios.post("http://localhost:5002/restapi/topologies/1/connect_host_to_switch", {
+        switch_id: switchId,
+        host_id: hostId,
+        switch_label:switchlabel,
+        host_label:hostlabel
+      });
+      console.log("Réponse de la requête:", response.data);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de la requête:", error);
+      // Gérer les erreurs de requête ici
+    }
+  
     const newData = {
-     ...data,
-      label: editLink.Linkname, 
+      ...data,
     };
   
     dataRef.current.edges.add(newData);
-  
     callback(newData);
   };
+  
+  
+  
 
   const onDeleteSelected = () => {
     const selectedNodes = network.getSelectedNodes();
@@ -271,7 +439,7 @@ export const MyNetwork = () => {
   };
   
 
-  const addNode = (x, y, group) => {
+  const addNode = async (x, y, group) => {
     if (group !== 'host' && group !== 'switch' && group !== 'port') {
       const newId = generateUniqueId();
       const newNode = {
@@ -286,7 +454,7 @@ export const MyNetwork = () => {
         network.setData(dataRef.current);
       }
       console.log(dataRef.current.nodes);
-    } else if(group == 'host') {
+    } else if (group === 'host') {
       const newId = generateUniqueId();
       const newNode = {
         id: newId,
@@ -298,39 +466,50 @@ export const MyNetwork = () => {
   
       // Add a new host node
       dataRef.current.nodes.add(newNode);
-  
-      // Add a new port node connected to the host node
-      const newPort1Id = generateUniqueId();
-      const newPort1 = {
-        id: newPort1Id,
-        label: `eth0`,
-        group: "port",
-        x: x - 20,
-        y: y + 90,
-      };
-      dataRef.current.nodes.add(newPort1);
-  
-      const newPort2Id = generateUniqueId();
-      const newPort2 = {
-        id: newPort2Id,
-        label: `eth1`,
-        group: "port",
-        x: x + 30,
-        y: y + 90,
-      };
-      dataRef.current.nodes.add(newPort2);
-  
-      dataRef.current.edges.add({ from: newId, to: newPort1Id });
-      dataRef.current.edges.add({ from: newId, to: newPort2Id });
-      
-      setEditNodeId(newId);
-      setEditNodeLabel(newNode.label);
-      setOpenDialog(true)  ;
 
-      if (network) {
-        network.setData(dataRef.current);
-      }
-      console.log(dataRef.current.nodes);
+    // Création d'un tableau pour stocker les ports associés à l'hôte
+    const ports = [];
+
+    // Ajout de la logique pour ajouter un port
+    for (let i = 0; i < 1; i++) {
+      const newPortId = generateUniqueId();
+      const newPort = {
+        id: newPortId,
+        label: `eth${i}`,
+        group: "port",
+        x: x - 20 + i * 30, // Positionnement du port
+        y: y + 90,
+      };
+      dataRef.current.nodes.add(newPort);
+
+      dataRef.current.edges.add({ from: newId, to: newPortId });
+
+      // Ajout du port au tableau ports
+      ports.push({
+        id: newPortId,
+        label: newPort.label,
+        group: newPort.group,
+        x: newPort.x,
+        y: newPort.y
+      });
+    }
+    console.log("HOTE :", newId);
+    console.log("X :", x);
+    console.log("Y :", y);
+    // Envoi de la requête POST avec les informations sur l'hôte et les ports
+    try {
+      const response = await axios.post("http://localhost:5002/restapi/topologies/1/hosts", {
+        host_id: `${newId}`, // Formatage de l'ID de l'hôte
+        x: x,
+        y: y,
+        ports: ports, // Ajout du tableau de ports
+      });
+      console.log("Réponse de la requête:", response.data);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de la requête:", error);
+      // Gérer les erreurs de requête ici
+    }
+
     } else if(group == 'switch'){
         const newId = generateUniqueId();
         const newNode = {
@@ -340,13 +519,15 @@ export const MyNetwork = () => {
           x: x,
           y: y,
         };
+        const ports = [];
+
         dataRef.current.nodes.add(newNode);
         // Add 6 new port nodes connected to the switch node
         for (let i = 0; i < 6; i++) {
           const newPortId = generateUniqueId();
           const newPort = {
             id: newPortId,
-            label: `eth${i}`,
+            label: `${newId}-eth${i}`,
             group: "port",
             x: x - 50 + i * 30,
             y: y + 90,
@@ -354,6 +535,16 @@ export const MyNetwork = () => {
           dataRef.current.nodes.add(newPort);
 
           dataRef.current.edges.add({ from: newId, to: newPortId });
+
+          ports.push({
+            id: newPortId,
+            label: newPort.label,
+            group: newPort.group,
+            x: newPort.x,
+            y: newPort.y
+          });
+
+
         }
         setEditNodeId(newId);
         setEditNodeLabel(newNode.label);
@@ -363,6 +554,21 @@ export const MyNetwork = () => {
           network.setData(dataRef.current);
         }
         console.log(dataRef.current.nodes);
+
+        try {
+          const response = await axios.post("http://localhost:5002/restapi/topologies/1/switches", {
+            switch_id: `${newId}`, // Formatage de l'ID du commutateur
+            x: x,
+            y: y,
+            ports: ports, // Ajout du tableau de ports
+          });
+          console.log("Réponse de la requête:", response.data);
+        } catch (error) {
+          console.error("Erreur lors de l'envoi de la requête:", error);
+          // Gérer les erreurs de requête ici
+        }
+
+
         } else if (group === 'port') {
           const newId = generateUniqueId();
     const newNode = {
@@ -387,8 +593,14 @@ export const MyNetwork = () => {
       network.setData(dataRef.current);
     }
     console.log(dataRef.current.nodes);
+
+
+
   }
   };
+
+ 
+
 
   const generateUniqueId = () => {
     let newId;
@@ -403,6 +615,10 @@ export const MyNetwork = () => {
       setNetwork(new Network(visJsRef.current, dataRef.current, options));
     }
   }, [visJsRef, network, options]);
+
+
+  
+
 
   const addEdge = () => {
     network.addEdgeMode();
@@ -489,6 +705,20 @@ export const MyNetwork = () => {
     setOpenDialogopenDialogSave(true);
   };
 
+
+  const handleRun= async () => {
+     // Envoyez une requête POST pour créer la topologie
+     try {
+      const postResponse = await axios.post('http://localhost:5002/restapi/topologies/1');
+      console.log('Topologie créée avec succès:', postResponse.data);
+
+      // Votre logique pour initialiser la topologie avec les données retournées par la requête POST
+
+    } catch (postError) {
+      console.error('Erreur lors de la création de la topologie:', postError);
+      // Gérer les erreurs de création de la topologie ici
+    }
+  };
   const handleCloseDialogSave = () => {
     setOpenDialogopenDialogSave(false);
   };
@@ -549,7 +779,7 @@ export const MyNetwork = () => {
     };
   }, [network]);
 
-  useEffect(() => {
+ useEffect(() => {
     const handleKeyPress = (event) => {
       if (event.key === 'H') {
         setSelectedNodeType('host');
@@ -596,7 +826,7 @@ export const MyNetwork = () => {
       network.fit(); // Réinitialise le niveau de zoom du réseau
     }
   };
-  
+
   const actions = [
     { icon: <img src={hostIcon} alt="Host" />, name: 'Add Host', onClick: () => setSelectedNodeType('host') },
     { icon: <img src={switchIcon} alt="Switch" />, name: 'Add Switch', onClick: () => setSelectedNodeType('switch') },
@@ -624,7 +854,6 @@ export const MyNetwork = () => {
 
     setOpenDialogopenDialogSave(false);
   }
-
   const [open, setOpen] = useState(false);
 
   const handleShare = () => {
@@ -641,12 +870,21 @@ export const MyNetwork = () => {
 
   return (
     <div>
-        <div 
+      <div style={{position: 'fixed',marginTop: '70px', right:'3%' }}>
+    {isBackendConnected ? (
+        <button style={{ backgroundColor: 'green' }}>Backend connecté</button>
+      ) : (
+        <button style={{ backgroundColor: 'red' }}>Backend non connecté</button>
+      )}
+    </div> 
+      <div 
         style={{width: '100%', float: 'right', top:'0'}}
           id="mynetwork"
           ref={visJsRef}
           onClick={onNetworkClick}
         ></div>
+   
+
 {/*------------Bouton Share--------------------*/}
 <Modal open={open} onClose={handleClose}>
   <Box
@@ -676,7 +914,7 @@ export const MyNetwork = () => {
         <Typography variant="subtitle1">Anyone with this link can edit:</Typography>    
       </Box>
       <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">http://localhost:3000/MyNetwork/edit</Typography>
+        <Typography variant="subtitle1">http://localhost:3000/MyNetwork</Typography>
         <Chip
           label="Edit"
           variant="outlined"
@@ -685,7 +923,7 @@ export const MyNetwork = () => {
           sx={{ ml: 2 }}
         />
         <Tooltip title="Copy link">
-          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork/edit")}>
+          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork")}>
             <ContentCopyIcon />
           </IconButton>
         </Tooltip>
@@ -696,7 +934,7 @@ export const MyNetwork = () => {
         <Typography variant="subtitle1">Anyone with this link can view Only:</Typography>
       </Box>
       <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">http://localhost:3000/MyNetwork/view</Typography>
+        <Typography variant="subtitle1">http://localhost:3000/Consulter</Typography>
         <Chip
           label="View"
           variant="outlined"
@@ -705,7 +943,7 @@ export const MyNetwork = () => {
           sx={{ ml: 2 }}
         />
         <Tooltip title="Copy link">
-          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork/view")}>
+          <IconButton onClick={() => copy("http://localhost:3000/Consulter")}>
             <ContentCopyIcon />
           </IconButton>
         </Tooltip>
@@ -871,7 +1109,7 @@ export const MyNetwork = () => {
         >
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
           <img src={controllerIcon} alt="Controller" style={{ width: 35, marginRight: 8 }} />
-          Controller Details
+          controller Details
          </Typography>
          <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -1144,17 +1382,27 @@ export const MyNetwork = () => {
         >
       <Tooltip title="Save an Experience Configuration ">
         <ToggleButton value="save" aria-label="save">
-          <SaveIcon onClick={handleSaveClick}/>
+        <SaveIcon onClick={initializeTopology}/>
         </ToggleButton>
         </Tooltip>
         <Tooltip title="Run ">
         <ToggleButton value="run" aria-label="run">
-          <PlayArrowIcon />
+        <PlayArrowIcon onClick={handleRun}/>
         </ToggleButton>
         </Tooltip>
         <Tooltip title="Stop ">
         <ToggleButton value="stop" aria-label="stop">
           <StopIcon />
+        </ToggleButton>
+        </Tooltip>
+	<Tooltip title="Pause ">
+        <ToggleButton value="Pause" aria-label="Pause">
+          <PauseIcon />
+        </ToggleButton>
+        </Tooltip>
+        <Tooltip title="Replay ">
+        <ToggleButton value="Replay" aria-label="Replay">
+          <ReplayIcon />
         </ToggleButton>
         </Tooltip>
         <Tooltip title="Share">
@@ -1197,6 +1445,7 @@ export const MyNetwork = () => {
                 onChange={(e) => setValues({ ...values, name: e.target.value })}
               />
             </Grid>
+
             <Grid item xs={6}>
               <Button onClick={handleCloseDialogSave} fullWidth>Cancel</Button>
             </Grid>
@@ -1227,8 +1476,10 @@ export const MyNetwork = () => {
           <img src={switchIcon} alt="Switch" style={{ width: 35, marginRight: 8 }} />
             Switch 
           </Typography>
+
           <Grid item xs={12}>
               <TextField
+                
                 margin="dense"
                 id="Hostname"
                 label="Hostname"
@@ -1243,6 +1494,7 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
+                
                 margin="dense"
                 id="DPID"
                 label="DPID"
@@ -1275,6 +1527,7 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
+                
                 margin="dense"
                 id="IPAddressSwitch"
                 label="IP Address"
@@ -1289,6 +1542,7 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
+                
                 margin="dense"
                 id="DPCTLPort"
                 label="DPCTL Port"
@@ -1320,6 +1574,7 @@ export const MyNetwork = () => {
             </Grid>
             <Grid item xs={12}>
             <TextField
+                
                 margin="dense"
                 id="StartCommandSwitch"
                 label="Start Command"
@@ -1335,7 +1590,8 @@ export const MyNetwork = () => {
               />
             </Grid>
             <Grid item xs={12}>
-            <TextField   
+            <TextField
+                
                 margin="dense"
                 id="StopCommandSwitch"
                 label="Stop Command"
@@ -1359,6 +1615,8 @@ export const MyNetwork = () => {
           </Grid>
         </Box>
       </Modal>
+
+ 
       <Dashboard />
     </div>
   );
