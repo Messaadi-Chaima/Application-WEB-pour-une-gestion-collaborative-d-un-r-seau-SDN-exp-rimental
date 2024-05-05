@@ -36,7 +36,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import Tooltip from '@mui/material/Tooltip'; 
-
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogTitle from '@mui/material/DialogTitle';
 import { Dashboard } from "./Dashboard";
 
 import {addSave} from '../Pages/Redux/userSlice';
@@ -48,6 +50,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import copy from "clipboard-copy";
 import PauseIcon from '@mui/icons-material/Pause';
 import ReplayIcon from '@mui/icons-material/Replay';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 import axios from 'axios';
 
@@ -82,8 +85,6 @@ export const MyNetwork = () => {
   // Nettoyage de l'intervalle pour éviter les fuites de mémoire
   return () => clearInterval(interval);
   }, []);
-  
-
 
     const initializeTopology = async () => {
       try {
@@ -187,6 +188,7 @@ export const MyNetwork = () => {
   const [openDialogPort, setOpenDialogopenDialogPort] = useState(false);
   const [openDialogSave, setOpenDialogopenDialogSave] = useState(false);
   const [openDialogSwitch, setOpenDialogopenDialogSwitch] = useState(false);
+  const [openDialogClean, setOpenDialogopenDialogClean] = useState(false);
 
   const [editHost, setEditHost] = useState({
     Hostname: '',
@@ -701,6 +703,12 @@ export const MyNetwork = () => {
   const handleCloseDialogPort = () => {
     setOpenDialogopenDialogPort(false);
   };
+  const handleOpenDialogClean = () => {
+    setOpenDialogopenDialogClean(true);
+  };
+  const handleCloseDialogClean = () => {
+    setOpenDialogopenDialogClean(false);
+  };
   const handleSaveClick= () => {
     setOpenDialogopenDialogSave(true);
   };
@@ -883,8 +891,24 @@ export const MyNetwork = () => {
           ref={visJsRef}
           onClick={onNetworkClick}
         ></div>
-   
-
+{/*------------Dialog Bouton Clean--------------------*/}
+ <Dialog
+        open={openDialogClean}
+        onClose={handleCloseDialogClean}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Do you really want to clean the topology ?"}
+        </DialogTitle>
+        <DialogActions>
+            <Button 
+              variant="contained"
+              color="success">Yes</Button>
+            <Button variant="contained" color="error"
+            onClick={handleCloseDialogClean}>No</Button>
+        </DialogActions>
+      </Dialog>  
 {/*------------Bouton Share--------------------*/}
 <Modal open={open} onClose={handleClose}>
   <Box
@@ -1403,6 +1427,11 @@ export const MyNetwork = () => {
         <Tooltip title="Replay ">
         <ToggleButton value="Replay" aria-label="Replay">
           <ReplayIcon />
+        </ToggleButton>
+        </Tooltip>
+        <Tooltip title="Clean ">
+        <ToggleButton value="Clean" aria-label="Clean">
+          <CleaningServicesIcon onClick={handleOpenDialogClean} />
         </ToggleButton>
         </Tooltip>
         <Tooltip title="Share">
