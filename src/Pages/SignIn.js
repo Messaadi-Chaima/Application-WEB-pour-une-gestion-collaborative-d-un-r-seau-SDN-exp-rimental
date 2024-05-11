@@ -65,7 +65,12 @@ export const SignIn = () => {
         // Stocker le nom d'utilisateur et le rôle dans le localStorage
         localStorage.setItem('username', username);
         localStorage.setItem('role', response.data.role);
-        navigate('/Dashboard');
+        const userRole = response.data.role;
+        if (userRole === 'Administrateur') {
+          navigate('/Interface');
+        } else if (userRole === 'Experimentator') {
+          navigate('/Home');
+        }
       } else {
         setError('Incorrect username/password!');
       }

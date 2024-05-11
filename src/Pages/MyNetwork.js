@@ -40,7 +40,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import { Dashboard } from "./Dashboard";
-
+import ClearIcon from '@mui/icons-material/Clear';
 import {addSave} from '../Pages/Redux/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { v4 as uuidv4 } from 'uuid'; 
@@ -51,7 +51,7 @@ import copy from "clipboard-copy";
 import PauseIcon from '@mui/icons-material/Pause';
 import ReplayIcon from '@mui/icons-material/Replay';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
-
+import {Notification} from './Notification';
 import axios from 'axios';
 
 export const MyNetwork = () => {
@@ -63,33 +63,48 @@ export const MyNetwork = () => {
   });
 
   const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [responseData, setResponseData] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const handleModalOpen = () => {
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
 
   useEffect(() => {
     const checkConnection = async () => {
-      try {
-        const response = await axios.get('http://localhost:5002/check-connection'); // Utilisez axios.get au lieu de fetch
-        if (response.status === 200) {
-          setIsBackendConnected(true);
-        } else {
-          setIsBackendConnected(false);
+        try {
+            const response = await axios.get('http://10.0.0.40:5002/check-connection');
+            if (response.status === 200) {
+                setIsBackendConnected(true);
+                initializeTopology(); // Si la connexion est réussie, initialisez la topologie
+            } else {
+                setIsBackendConnected(false);
+            }
+        } catch (error) {
+            setIsBackendConnected(false);
         }
-      } catch (error) {
-        setIsBackendConnected(false);
-      }
     };
+
+    checkConnection(); // Appel initial pour vérifier la connexion au montage du composant
+}, []);
   
-    checkConnection();
-
-    const interval = setInterval(checkConnection, 5000); // Vérifier la connexion toutes les 5 secondes
-
-  // Nettoyage de l'intervalle pour éviter les fuites de mémoire
-  return () => clearInterval(interval);
-  }, []);
+  
+  // Fonction pour supprimer tous les nœuds et toutes les arêtes
+const clearData = () => {
+  dataRef.current.nodes.clear(); // Supprime tous les nœuds
+  dataRef.current.edges.clear(); // Supprime toutes les arêtes
+};
 
     const initializeTopology = async () => {
       try {
-        const response = await axios.get('http://localhost:5002/restapi/topologies/1/config');
+        const response = await axios.get('http://10.0.0.40:5002/restapi/topologies/1/config');
         const topologyData = response.data;
+        const currentTime = new Date();
+        const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
+        setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
         console.log(topologyData)
         // Accédez aux données de la topologie
         const { hosts, switches, host_switch_links } = topologyData;
@@ -235,6 +250,7 @@ export const MyNetwork = () => {
 
 
 
+
   const onAddEdge = async (data, callback) => {
     console.log("Adding edge:", data);
   
@@ -256,17 +272,24 @@ export const MyNetwork = () => {
     console.log("To node:", toNode);
     console.log("Previous nodes from:", previousNodesFrom);
     console.log("Previous nodes to:", previousNodesTo);
+
+    let switchId, hostId, switchlabel, hostlabel;
+    if (previousNodesFrom[0]?.group === "switch" && previousNodesTo[0]?.group === "host") {
+      switchId = previousNodesFrom[0]?.id.toString(); // ID du switch
+      hostId = previousNodesTo[0]?.id.toString(); // ID de l'hôte
+      switchlabel = fromNode.label; // Label du switch
+      hostlabel = toNode.label; // Label de l'hôte
+  } 
+  // Si l'edge va de l'hôte vers le switch
+  else if (previousNodesFrom[0]?.group === "host" && previousNodesTo[0]?.group === "switch") {
+      switchId = previousNodesTo[0]?.id.toString(); // ID du switch
+      hostId = previousNodesFrom[0]?.id.toString(); // ID de l'hôte
+      switchlabel = toNode.label; // Label du switch
+      hostlabel = fromNode.label; // Label de l'hôte
+  }
   
-    const switchId = previousNodesFrom[0]?.id.toString(); // ID du premier nœud précédent du nœud de départ
-    const hostId = previousNodesTo[0]?.id.toString(); // ID du premier nœud précédent du nœud d'arrivée
-    const switchlabel = fromNode.label; // ID du premier nœud précédent du nœud de départ
-    const hostlabel = toNode.label; // ID du premier nœud précédent du nœud d'arrivée
-    console.log(switchId);
-    console.log(hostId);
-    console.log(switchlabel);
-    console.log(hostlabel);
     try {
-      const response = await axios.post("http://localhost:5002/restapi/topologies/1/connect_host_to_switch", {
+      const response = await axios.post("http://10.0.0.40:5002/restapi/topologies/1/connect_host_to_switch", {
         switch_id: switchId,
         host_id: hostId,
         switch_label:switchlabel,
@@ -285,17 +308,112 @@ export const MyNetwork = () => {
     dataRef.current.edges.add(newData);
     callback(newData);
   };
-  
-  
-  
 
   const onDeleteSelected = () => {
     const selectedNodes = network.getSelectedNodes();
     const selectedEdges = network.getSelectedEdges();
-    dataRef.current.nodes.remove(selectedNodes);
-    dataRef.current.edges.remove(selectedEdges);
+
+    const nodesToRemove = [];
+    const edgesToRemove = [];
+
+    const nodesToRemoveMininet = [];
+    const edgesToRemoveMininet = [];
+
+    let nodesDeleted = false;
+    let edgesDeleted = false;
+
+    selectedNodes.forEach(nodeId => {
+        const node = dataRef.current.nodes.get(nodeId);
+        if (node.group === 'host') {
+            const connectedEdgesIds = network.getConnectedEdges(nodeId);
+            connectedEdgesIds.forEach(edgeId => {
+                const edge = dataRef.current.edges.get(edgeId);
+                edgesToRemove.push(edgeId);
+                nodesToRemove.push(edge.to); // Ajoute le nœud de port connecté à l'arête
+            });
+            nodesToRemove.push(nodeId); // Ajoute le nœud hôte lui-même
+            nodesToRemoveMininet.push(nodeId);
+            nodesDeleted = true;
+        } else if (node.group === 'switch') {
+            const connectedEdgesIds = network.getConnectedEdges(nodeId);
+            connectedEdgesIds.forEach(edgeId => {
+                const edge = dataRef.current.edges.get(edgeId);
+                edgesToRemove.push(edgeId);
+                nodesToRemove.push(edge.to); // Ajoute le nœud de port connecté à l'arête
+            });
+            nodesToRemove.push(nodeId); // Ajoute le nœud commutateur lui-même
+            nodesToRemoveMininet.push(nodeId);
+            nodesDeleted = true;
+        }
+    });
+
+    selectedEdges.forEach(edgeId => {
+        const edge = dataRef.current.edges.get(edgeId);
+        const fromNode = dataRef.current.nodes.get(edge.from);
+        const toNode = dataRef.current.nodes.get(edge.to);
+        const previousNodesFrom = dataRef.current.edges
+            .get({ filter: edge => edge.to === fromNode.id })
+            .map(edge => dataRef.current.nodes.get(edge.from));
+        const previousNodesTo = dataRef.current.edges
+            .get({ filter: edge => edge.to === toNode.id })
+            .map(edge => dataRef.current.nodes.get(edge.from));
+        const isSwitchToHostEdge =
+            fromNode.group === 'port' &&
+            toNode.group === 'port' &&
+            previousNodesFrom[0]?.group === 'switch' &&
+            previousNodesTo[0]?.group === 'host';
+        const isHostToSwitchEdge =
+            fromNode.group === 'port' &&
+            toNode.group === 'port' &&
+            previousNodesFrom[0]?.group === 'host' &&
+            previousNodesTo[0]?.group === 'switch';
+        if (isSwitchToHostEdge || isHostToSwitchEdge) {
+            edgesToRemove.push(edgeId);
+            edgesToRemoveMininet.push(previousNodesFrom[0]?.id);
+            edgesToRemoveMininet.push(previousNodesTo[0]?.id);
+            edgesDeleted = true;
+        }
+    });
+
+    if (nodesDeleted) {
+      const data = {
+        selected_nodes: nodesToRemoveMininet,
+        group: selectedNodes.length > 0 ? dataRef.current.nodes.get(selectedNodes[0]).group : "", // Utiliser le groupe du premier nœud sélectionné
+    };
+
+        axios.post('http://10.0.0.40:5002/restapi/topologies/1/delete-selected', data)
+            .then(response => {
+                console.log(response.data.message);
+                // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
+            })
+            .catch(error => {
+                console.error('Error deleting selected nodes:', error);
+                // Gérez les erreurs de suppression des nœuds, le cas échéant
+            });
+    }
+
+    if (edgesDeleted) {
+        const data = {
+            selected_nodes: edgesToRemoveMininet,
+            group: "links",
+        };
+
+        axios.post('http://10.0.0.40:5002/restapi/topologies/1/delete-selected', data)
+            .then(response => {
+                console.log(response.data.message);
+                // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
+            })
+            .catch(error => {
+                console.error('Error deleting selected edges:', error);
+                // Gérez les erreurs de suppression des arêtes, le cas échéant
+            });
+    }
+
+    dataRef.current.nodes.remove(nodesToRemove);
+    dataRef.current.edges.remove(edgesToRemove);
+
     network.setData(dataRef.current);
-  };
+};
 
   const onEditNode = (data, callback) => {
     console.log("Editing node:", data);
@@ -500,13 +618,16 @@ export const MyNetwork = () => {
     console.log("Y :", y);
     // Envoi de la requête POST avec les informations sur l'hôte et les ports
     try {
-      const response = await axios.post("http://localhost:5002/restapi/topologies/1/hosts", {
+      const response = await axios.post("http://10.0.0.40:5002/restapi/topologies/1/hosts", {
         host_id: `${newId}`, // Formatage de l'ID de l'hôte
         x: x,
         y: y,
         ports: ports, // Ajout du tableau de ports
       });
       console.log("Réponse de la requête:", response.data);
+      const currentTime = new Date();
+      const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
+      setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
     } catch (error) {
       console.error("Erreur lors de l'envoi de la requête:", error);
       // Gérer les erreurs de requête ici
@@ -558,13 +679,16 @@ export const MyNetwork = () => {
         console.log(dataRef.current.nodes);
 
         try {
-          const response = await axios.post("http://localhost:5002/restapi/topologies/1/switches", {
+          const response = await axios.post("http://10.0.0.40:5002/restapi/topologies/1/switches", {
             switch_id: `${newId}`, // Formatage de l'ID du commutateur
             x: x,
             y: y,
             ports: ports, // Ajout du tableau de ports
           });
           console.log("Réponse de la requête:", response.data);
+          const currentTime = new Date();
+          const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
+          setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
         } catch (error) {
           console.error("Erreur lors de l'envoi de la requête:", error);
           // Gérer les erreurs de requête ici
@@ -601,9 +725,6 @@ export const MyNetwork = () => {
   }
   };
 
- 
-
-
   const generateUniqueId = () => {
     let newId;
     do {
@@ -617,10 +738,6 @@ export const MyNetwork = () => {
       setNetwork(new Network(visJsRef.current, dataRef.current, options));
     }
   }, [visJsRef, network, options]);
-
-
-  
-
 
   const addEdge = () => {
     network.addEdgeMode();
@@ -714,12 +831,26 @@ export const MyNetwork = () => {
   };
 
 
+  const handleFileReset = async () => {
+    try {
+      const response = await axios.post(`http://10.0.0.40:5002/restapi/topologies/1/reset-topology`);
+      console.log('Topology reset successfully',response);
+      initializeTopology();
+      clearData();
+      setOpenDialogopenDialogClean(false);
+    } catch (error) {
+      console.log('Failed to reset configuration file.');
+    }
+  };
+
   const handleRun= async () => {
      // Envoyez une requête POST pour créer la topologie
      try {
-      const postResponse = await axios.post('http://localhost:5002/restapi/topologies/1');
+      const postResponse = await axios.post('http://10.0.0.40:5002/restapi/topologies/1');
       console.log('Topologie créée avec succès:', postResponse.data);
-
+      const currentTime = new Date();
+      const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
+      setResponseData(prevData => [...prevData, { responseData: postResponse.data, timestamp: formattedTime }]);
       // Votre logique pour initialiser la topologie avec les données retournées par la requête POST
 
     } catch (postError) {
@@ -878,7 +1009,7 @@ export const MyNetwork = () => {
 
   return (
     <div>
-      <div style={{position: 'fixed',marginTop: '70px', right:'3%' }}>
+      <div style={{position: 'fixed',marginTop: '70px', right:'5%' , zIndex: 1000}}>
     {isBackendConnected ? (
         <button style={{ backgroundColor: 'green' }}>Backend connecté</button>
       ) : (
@@ -891,6 +1022,13 @@ export const MyNetwork = () => {
           ref={visJsRef}
           onClick={onNetworkClick}
         ></div>
+
+      <Notification 
+      modalOpen={modalOpen} 
+      handleModalClose={handleModalClose}
+      handleModalOpen={handleModalOpen}
+      responseData={responseData}
+      />
 {/*------------Dialog Bouton Clean--------------------*/}
  <Dialog
         open={openDialogClean}
@@ -902,7 +1040,7 @@ export const MyNetwork = () => {
           {"Do you really want to clean the topology ?"}
         </DialogTitle>
         <DialogActions>
-            <Button 
+            <Button onClick={handleFileReset}
               variant="contained"
               color="success">Yes</Button>
             <Button variant="contained" color="error"

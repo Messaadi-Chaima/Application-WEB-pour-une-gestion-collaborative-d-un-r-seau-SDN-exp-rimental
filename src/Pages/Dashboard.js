@@ -33,6 +33,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { v4 as uuidv4 } from 'uuid';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const drawerWidth = 240;
 
@@ -95,6 +96,7 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
   const toggleDrawer = () => {
     setOpen(!open);
   };
+
 
   const [modalOpen, setModalOpen] = useState(false); 
 
@@ -178,7 +180,8 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
   const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
-  
+  const storedUsername = localStorage.getItem('username');
+
   return (
     <ThemeProvider theme={defaultTheme}>
       <Box sx={{ display: 'flex' }}>
@@ -211,7 +214,8 @@ export const Dashboard = ({ handleOpen, user, setUsers}) => {
               Mininet Editor
 
             </Typography>
-           
+            <AccountCircleIcon />
+            <Typography sx={{ ml: 1 }}>{storedUsername}</Typography>
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>
