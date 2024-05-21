@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -55,8 +54,7 @@ export const MainListItems = () => {
             <SaveIcon style={{ color: "#fff" }}/>
           </ListItemIcon>
           <ListItemText sx={textStyle}
-            primary="List of saved"
-            secondary="configurations"
+            primary="Import"
           />
         </ListItemButton>
         <ListItemButton sx={itemsStyle} component={Link} to="/Control_experimental_elements">
@@ -76,7 +74,7 @@ export const MainListItems = () => {
       </ListItemButton>
       </React.Fragment>
     )}
-    {storedRole === "Administrateur" && (
+    {storedRole === "Administrator" && (
       <ListItemButton sx={itemsStyle} component={Link} to="/Manage_Users">
         <ListItemIcon>
           <PersonIcon style={{ color: "#fff" }}/>
@@ -111,7 +109,7 @@ export const SecondaryListItems = ({handleOpen}) => {
 
   return (
     <React.Fragment>
-      {storedRole === "Administrateur" && (
+      {storedRole === "Administrator" && (
       <ListItemButton sx={itemsStyle} onClick={() => handleOpen()}>
         <ListItemIcon>
           <AddIcon style={{ color: "#fff" }}/>

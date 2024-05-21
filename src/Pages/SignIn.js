@@ -66,7 +66,7 @@ export const SignIn = () => {
         localStorage.setItem('username', username);
         localStorage.setItem('role', response.data.role);
         const userRole = response.data.role;
-        if (userRole === 'Administrateur') {
+        if (userRole === 'Administrator') {
           navigate('/Interface');
         } else if (userRole === 'Experimentator') {
           navigate('/Home');

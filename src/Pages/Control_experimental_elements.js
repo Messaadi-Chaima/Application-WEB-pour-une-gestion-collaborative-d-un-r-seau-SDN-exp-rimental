@@ -14,7 +14,7 @@ export const Control_experimental_elements  = () => {
   const fetchData = async () => {
     if (inputText.trim().toLowerCase() === "pingall") {
       try {
-        const response = await axios.get('http://localhost:5002/restapi/topologies/1/pingall');
+        const response = await axios.get('http://10.0.0.40:5049/restapi/topologies/1/pingall');
         const result = response.data.result;
         if (result === 0) {
           setResponseText(prevText => prevText + `Ping: testing ping reachability\nResults: ${result}% dropped\n`);
@@ -31,7 +31,7 @@ export const Control_experimental_elements  = () => {
         const sourceHost = commandParts[1];
         const destHost = commandParts[2];
         try {
-          const response = await axios.post('http://localhost:5002/restapi/topologies/1/ping', {
+          const response = await axios.post('http://10.0.0.40:5049/restapi/topologies/1/ping', {
             source_host: sourceHost,
             dest_host: destHost
           });
@@ -45,7 +45,7 @@ export const Control_experimental_elements  = () => {
       }
     } else if (inputText.trim().toLowerCase() === "nodes") {
       try {
-        const response = await axios.get('http://localhost:5002/restapi/topologies/1/nodes');
+        const response = await axios.get('http://10.0.0.40:5049/restapi/topologies/1/nodes');
         const nodesDetails = response.data.nodes.map(node => {
           return `${node.name} - Type: ${node.type}`;
         });

@@ -34,7 +34,7 @@ export const Interface = () => {
 
   const logout = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/pythonlogin/logout');
+      const response = await axios.post('http://localhost5000/pythonlogin/logout');
       localStorage.removeItem('username');
       localStorage.removeItem('role');
       if (response.data.message === 'Logged out successfully!') {

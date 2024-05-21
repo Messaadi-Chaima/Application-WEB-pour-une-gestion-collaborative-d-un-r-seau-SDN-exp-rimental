@@ -6,10 +6,6 @@ import hostIcon from "../Images/host.png";
 import switchIcon from "../Images/switch.png";
 import controllerIcon from "../Images/controller.png";
 import portIcon from "../Images/port.png";
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import SaveIcon from '@mui/icons-material/Save';
-import Tooltip from '@mui/material/Tooltip'; 
 import axios from 'axios';
 
 export const Consulter = () => {
@@ -24,31 +20,32 @@ export const Consulter = () => {
 
   useEffect(() => {
     const checkConnection = async () => {
-      try {
-        const response = await axios.get('http://localhost:5002/check-connection'); // Utilisez axios.get au lieu de fetch
-        if (response.status === 200) {
-          setIsBackendConnected(true);
-        } else {
-          setIsBackendConnected(false);
+        try {
+            const response = await axios.get('http://10.0.0.40:5049/check-connection');
+            if (response.status === 200) {
+                setIsBackendConnected(true);
+                initializeTopology(); // Si la connexion est réussie, initialisez la topologie
+            } else {
+                setIsBackendConnected(false);
+            }
+        } catch (error) {
+            setIsBackendConnected(false);
         }
-      } catch (error) {
-        setIsBackendConnected(false);
-      }
     };
+
+    checkConnection(); // Appel initial pour vérifier la connexion au montage du composant
+}, []);
   
-    checkConnection();
-
-    const interval = setInterval(checkConnection, 5000); // Vérifier la connexion toutes les 5 secondes
-
-  // Nettoyage de l'intervalle pour éviter les fuites de mémoire
-  return () => clearInterval(interval);
-  }, []);
   
-
+  // Fonction pour supprimer tous les nœuds et toutes les arêtes
+const clearData = () => {
+  dataRef.current.nodes.clear(); // Supprime tous les nœuds
+  dataRef.current.edges.clear(); // Supprime toutes les arêtes
+};
 
     const initializeTopology = async () => {
       try {
-        const response = await axios.get('http://localhost:5002/restapi/topologies/1/config');
+        const response = await axios.get('http://10.0.0.40:5049/restapi/topologies/1/config');
         const topologyData = response.data;
         console.log(topologyData)
         // Accédez aux données de la topologie
@@ -140,6 +137,8 @@ export const Consulter = () => {
     };
 
   const [selectedNodeType, setSelectedNodeType] = useState(null);
+  const [editNodeId, setEditNodeId] = useState(null);
+  const [editNodeLabel, setEditNodeLabel] = useState('');
 
   const onAddEdge = async (data, callback) => {
     console.log("Adding edge:", data);
@@ -162,17 +161,24 @@ export const Consulter = () => {
     console.log("To node:", toNode);
     console.log("Previous nodes from:", previousNodesFrom);
     console.log("Previous nodes to:", previousNodesTo);
+
+    let switchId, hostId, switchlabel, hostlabel;
+    if (previousNodesFrom[0]?.group === "switch" && previousNodesTo[0]?.group === "host") {
+      switchId = previousNodesFrom[0]?.id.toString(); // ID du switch
+      hostId = previousNodesTo[0]?.id.toString(); // ID de l'hôte
+      switchlabel = fromNode.label; // Label du switch
+      hostlabel = toNode.label; // Label de l'hôte
+  } 
+  // Si l'edge va de l'hôte vers le switch
+  else if (previousNodesFrom[0]?.group === "host" && previousNodesTo[0]?.group === "switch") {
+      switchId = previousNodesTo[0]?.id.toString(); // ID du switch
+      hostId = previousNodesFrom[0]?.id.toString(); // ID de l'hôte
+      switchlabel = toNode.label; // Label du switch
+      hostlabel = fromNode.label; // Label de l'hôte
+  }
   
-    const switchId = previousNodesFrom[0]?.id.toString(); // ID du premier nœud précédent du nœud de départ
-    const hostId = previousNodesTo[0]?.id.toString(); // ID du premier nœud précédent du nœud d'arrivée
-    const switchlabel = fromNode.label; // ID du premier nœud précédent du nœud de départ
-    const hostlabel = toNode.label; // ID du premier nœud précédent du nœud d'arrivée
-    console.log(switchId);
-    console.log(hostId);
-    console.log(switchlabel);
-    console.log(hostlabel);
     try {
-      const response = await axios.post("http://localhost:5002/restapi/topologies/1/connect_host_to_switch", {
+      const response = await axios.post("http://10.0.0.40:5049/restapi/topologies/1/connect_host_to_switch", {
         switch_id: switchId,
         host_id: hostId,
         switch_label:switchlabel,
@@ -191,6 +197,112 @@ export const Consulter = () => {
     dataRef.current.edges.add(newData);
     callback(newData);
   };
+
+  const onDeleteSelected = () => {
+    const selectedNodes = network.getSelectedNodes();
+    const selectedEdges = network.getSelectedEdges();
+
+    const nodesToRemove = [];
+    const edgesToRemove = [];
+
+    const nodesToRemoveMininet = [];
+    const edgesToRemoveMininet = [];
+
+    let nodesDeleted = false;
+    let edgesDeleted = false;
+
+    selectedNodes.forEach(nodeId => {
+        const node = dataRef.current.nodes.get(nodeId);
+        if (node.group === 'host') {
+            const connectedEdgesIds = network.getConnectedEdges(nodeId);
+            connectedEdgesIds.forEach(edgeId => {
+                const edge = dataRef.current.edges.get(edgeId);
+                edgesToRemove.push(edgeId);
+                nodesToRemove.push(edge.to); // Ajoute le nœud de port connecté à l'arête
+            });
+            nodesToRemove.push(nodeId); // Ajoute le nœud hôte lui-même
+            nodesToRemoveMininet.push(nodeId);
+            nodesDeleted = true;
+        } else if (node.group === 'switch') {
+            const connectedEdgesIds = network.getConnectedEdges(nodeId);
+            connectedEdgesIds.forEach(edgeId => {
+                const edge = dataRef.current.edges.get(edgeId);
+                edgesToRemove.push(edgeId);
+                nodesToRemove.push(edge.to); // Ajoute le nœud de port connecté à l'arête
+            });
+            nodesToRemove.push(nodeId); // Ajoute le nœud commutateur lui-même
+            nodesToRemoveMininet.push(nodeId);
+            nodesDeleted = true;
+        }
+    });
+
+    selectedEdges.forEach(edgeId => {
+        const edge = dataRef.current.edges.get(edgeId);
+        const fromNode = dataRef.current.nodes.get(edge.from);
+        const toNode = dataRef.current.nodes.get(edge.to);
+        const previousNodesFrom = dataRef.current.edges
+            .get({ filter: edge => edge.to === fromNode.id })
+            .map(edge => dataRef.current.nodes.get(edge.from));
+        const previousNodesTo = dataRef.current.edges
+            .get({ filter: edge => edge.to === toNode.id })
+            .map(edge => dataRef.current.nodes.get(edge.from));
+        const isSwitchToHostEdge =
+            fromNode.group === 'port' &&
+            toNode.group === 'port' &&
+            previousNodesFrom[0]?.group === 'switch' &&
+            previousNodesTo[0]?.group === 'host';
+        const isHostToSwitchEdge =
+            fromNode.group === 'port' &&
+            toNode.group === 'port' &&
+            previousNodesFrom[0]?.group === 'host' &&
+            previousNodesTo[0]?.group === 'switch';
+        if (isSwitchToHostEdge || isHostToSwitchEdge) {
+            edgesToRemove.push(edgeId);
+            edgesToRemoveMininet.push(previousNodesFrom[0]?.id);
+            edgesToRemoveMininet.push(previousNodesTo[0]?.id);
+            edgesDeleted = true;
+        }
+    });
+
+    if (nodesDeleted) {
+      const data = {
+        selected_nodes: nodesToRemoveMininet,
+        group: selectedNodes.length > 0 ? dataRef.current.nodes.get(selectedNodes[0]).group : "", // Utiliser le groupe du premier nœud sélectionné
+    };
+
+        axios.post('http://10.0.0.40:5049/restapi/topologies/1/delete-selected', data)
+            .then(response => {
+                console.log(response.data.message);
+                // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
+            })
+            .catch(error => {
+                console.error('Error deleting selected nodes:', error);
+                // Gérez les erreurs de suppression des nœuds, le cas échéant
+            });
+    }
+
+    if (edgesDeleted) {
+        const data = {
+            selected_nodes: edgesToRemoveMininet,
+            group: "links",
+        };
+
+        axios.post('http://10.0.0.40:5049/restapi/topologies/1/delete-selected', data)
+            .then(response => {
+                console.log(response.data.message);
+                // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
+            })
+            .catch(error => {
+                console.error('Error deleting selected edges:', error);
+                // Gérez les erreurs de suppression des arêtes, le cas échéant
+            });
+    }
+
+    dataRef.current.nodes.remove(nodesToRemove);
+    dataRef.current.edges.remove(edgesToRemove);
+
+    network.setData(dataRef.current);
+};
 
   const onEditNode = (data, callback) => {
     console.log("Editing node:", data);
@@ -395,7 +507,7 @@ export const Consulter = () => {
     console.log("Y :", y);
     // Envoi de la requête POST avec les informations sur l'hôte et les ports
     try {
-      const response = await axios.post("http://localhost:5002/restapi/topologies/1/hosts", {
+      const response = await axios.post("http://10.0.0.40:5049/restapi/topologies/1/hosts", {
         host_id: `${newId}`, // Formatage de l'ID de l'hôte
         x: x,
         y: y,
@@ -453,7 +565,7 @@ export const Consulter = () => {
         console.log(dataRef.current.nodes);
 
         try {
-          const response = await axios.post("http://localhost:5002/restapi/topologies/1/switches", {
+          const response = await axios.post("http://10.0.0.40:5049/restapi/topologies/1/switches", {
             switch_id: `${newId}`, // Formatage de l'ID du commutateur
             x: x,
             y: y,
@@ -464,8 +576,6 @@ export const Consulter = () => {
           console.error("Erreur lors de l'envoi de la requête:", error);
           // Gérer les erreurs de requête ici
         }
-
-
         } else if (group === 'port') {
           const newId = generateUniqueId();
     const newNode = {
@@ -490,7 +600,6 @@ export const Consulter = () => {
       network.setData(dataRef.current);
     }
     console.log(dataRef.current.nodes);
-
   }
   };
 
@@ -507,6 +616,25 @@ export const Consulter = () => {
       setNetwork(new Network(visJsRef.current, dataRef.current, options));
     }
   }, [visJsRef, network, options]);
+
+  const addEdge = () => {
+    network.addEdgeMode();
+  };
+
+  const editEdge = () => {
+    network.editEdgeMode();
+  };
+
+  const deleteSelected = () => {
+    onDeleteSelected();
+  };
+
+  const handleEditNode = () => {
+    onEditNode({ id: editNodeId, label: editNodeLabel }, () => {});
+    setOpenDialog(false);
+    console.log(editHost);
+    console.log('host',editNodeLabel);
+  };
 
   useEffect(() => {
     const handleDoubleClick = (params) => {
@@ -568,17 +696,6 @@ export const Consulter = () => {
           ref={visJsRef}
           onClick={onNetworkClick}
         ></div>
-{/*------------------Boutons: Run Stop Save Share---------*/}
-      <ToggleButtonGroup
-        aria-label="device"
-        sx={{ position: 'fixed', top: 80, left: "50%", }}
-        >
-      <Tooltip title="Save">
-        <ToggleButton value="save" aria-label="save">
-        <SaveIcon onClick={initializeTopology}/>
-        </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
     </div>
   );
 };
