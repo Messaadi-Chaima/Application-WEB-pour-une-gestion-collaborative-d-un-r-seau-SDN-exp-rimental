@@ -33,14 +33,12 @@ export const MainListItems = () => {
 
   return (
     <React.Fragment>
-    
     <ListItemButton sx={itemsStyle}  component={Link} to="/Home" >
       <ListItemIcon>
         <DashboardIcon style={{ color: "#fff" }}/>
       </ListItemIcon>
       <ListItemText sx={textStyle} primary="Home" />
     </ListItemButton>
-    {storedRole === "Experimentator" && (
       <React.Fragment>
         {console.log('storedRole', storedRole)}
         <ListItemButton sx={itemsStyle} component={Link} to="/MyNetwork">
@@ -48,14 +46,6 @@ export const MainListItems = () => {
             <HubIcon style={{ color: "#fff" }}/>
           </ListItemIcon>
           <ListItemText sx={textStyle} primary="Topologie" />
-        </ListItemButton>
-        <ListItemButton sx={itemsStyle} component={Link} to="/List_of_saved_configurations">
-          <ListItemIcon>
-            <SaveIcon style={{ color: "#fff" }}/>
-          </ListItemIcon>
-          <ListItemText sx={textStyle}
-            primary="Import"
-          />
         </ListItemButton>
         <ListItemButton sx={itemsStyle} component={Link} to="/Control_experimental_elements">
           <ListItemIcon>
@@ -73,7 +63,6 @@ export const MainListItems = () => {
         <ListItemText sx={textStyle} primary="Web Terminals" />
       </ListItemButton>
       </React.Fragment>
-    )}
     {storedRole === "Administrator" && (
       <ListItemButton sx={itemsStyle} component={Link} to="/Manage_Users">
         <ListItemIcon>

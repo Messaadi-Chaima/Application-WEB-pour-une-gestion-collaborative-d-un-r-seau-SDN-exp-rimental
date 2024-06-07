@@ -28,7 +28,8 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
-import { deepOrange } from '@mui/material/colors';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
 
 export const UserList = () => {
   const dispatch = useDispatch();
@@ -109,9 +110,6 @@ export const UserList = () => {
       console.error('Error updating user:', error);
     }
   };
-  
-  
-  
   
   
   const columns = [
@@ -196,8 +194,6 @@ export const UserList = () => {
     return row.id;
   }
 
-
-
   return (
     <div >
       <div style={{width: '100%',
@@ -208,7 +204,14 @@ export const UserList = () => {
       <DataGrid
         rows={user}
         columns={columns}
-        pageSize={5}
+        initialState={{
+          pagination: {
+            paginationModel: {
+              pageSize: 7,
+            },
+          },
+        }}
+        pageSizeOptions={[7]}
         components={{
           Toolbar: GridToolbar,
         }}
@@ -224,6 +227,11 @@ export const UserList = () => {
         <DialogTitle id="alert-dialog-title">
           {"Do you really want to delete this user?"}
         </DialogTitle>
+        <DialogContent>
+        <Typography variant="h6" gutterBottom sx={{ textAlign: 'center' }}>
+        {user.find(u => u.id === deleteUserId)?.name}
+      </Typography>
+        </DialogContent>
         <DialogActions>
           
             <Button
@@ -288,6 +296,7 @@ export const UserList = () => {
         }
         label="Password"
         onChange={(e) => setEditValues({ ...editValues, password: e.target.value })} 
+        value={editValues.password}
       />
     </FormControl>
   </Grid>

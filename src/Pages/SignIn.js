@@ -11,7 +11,13 @@ import { useState } from "react";
 import Logo from "../Images/CERIST.png";
 import axios from 'axios'; 
 import { useNavigate  } from "react-router-dom";
-
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputAdornment from '@mui/material/InputAdornment';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 
 const theme = createTheme({
   palette: {
@@ -81,6 +87,11 @@ export const SignIn = () => {
     }
   };
   
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -137,7 +148,7 @@ export const SignIn = () => {
             <Box
               component="form"
               noValidate
-              onSubmit={handleSubmit} // Call handleSubmit function on form submit
+              onSubmit={handleSubmit} 
               sx={{ mt: 1 }}
             >
               <TextField
@@ -145,7 +156,7 @@ export const SignIn = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="usename"
+                id="username"
                 label="Username"
                 name="usename"
                 autoComplete="usename"
@@ -153,19 +164,31 @@ export const SignIn = () => {
                 size="medium"
                 onChange={(e) => setUsername(e.target.value)}
               />
-              <TextField
-                value={password}
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-                size="medium"
-                onChange={(e) => setPassword(e.target.value)}
+              <FormControl fullWidth variant="outlined" required>
+              <InputLabel 
+              htmlFor="outlined-adornment-password"
+              >Password</InputLabel>
+              <OutlinedInput
+              id="outlined-adornment-password"
+              type={showPassword ? 'text' : 'password'}
+              endAdornment={
+              <InputAdornment position="end">
+              <IconButton
+              aria-label="toggle password visibility"
+              onClick={handleClickShowPassword}
+              onMouseDown={handleMouseDownPassword}
+              edge="end"
+              >
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+              </InputAdornment>
+               }
+              label="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               />
+              </FormControl>
               {error && <Typography color="error">{error}</Typography>} {/* Display error message */}
               <Button
                 type="submit"

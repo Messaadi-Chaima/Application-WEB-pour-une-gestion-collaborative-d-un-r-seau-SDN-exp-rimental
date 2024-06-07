@@ -14,6 +14,9 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
+import HubIcon from '@mui/icons-material/Hub';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import TuneIcon from '@mui/icons-material/Tune';
 import axios from 'axios';
 
 const buttonsStyle = {
@@ -34,7 +37,7 @@ export const Interface = () => {
 
   const logout = async () => {
     try {
-      const response = await axios.post('http://localhost5000/pythonlogin/logout');
+      const response = await axios.post('http://localhost:5000/pythonlogin/logout');
       localStorage.removeItem('username');
       localStorage.removeItem('role');
       if (response.data.message === 'Logged out successfully!') {
@@ -84,7 +87,7 @@ export const Interface = () => {
             <Button
               variant="contained"
               sx={buttonsStyle}
-              onClick={() => navigate("/Dashboard")}
+              onClick={() => navigate("/Home")}
             >
               <DashboardIcon />
               <Typography sx={{ ml: 2 }}>Dashboard</Typography>
@@ -105,6 +108,30 @@ export const Interface = () => {
                 >
                   <PersonIcon style={{ color: "#fff" }} />
                   <Typography sx={{ ml: 2 }}>Manage Users</Typography>
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={buttonsStyle}
+                  onClick={() => navigate("/MyNetwork")}
+                >
+                  <HubIcon style={{ color: "#fff" }}/>
+                  <Typography sx={{ ml: 2 }}>Topologie</Typography>
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={buttonsStyle}
+                  onClick={() => navigate("/Test")}
+                >
+                  <TerminalIcon style={{ color: "#fff" }}/>
+                  <Typography sx={{ ml: 2 }}>Web Terminals</Typography>
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={buttonsStyle}
+                  onClick={() => navigate("/Control_experimental_elements")}
+                >
+                  <TuneIcon style={{ color: "#fff" }}/>
+                  <Typography sx={{ ml: 2 }}>Control of experimental elements</Typography>
                 </Button>
               </>
           </CardContent>

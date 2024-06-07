@@ -12,26 +12,14 @@ import {
     Grid,
   } from "@mui/material";
   import Button from '@mui/material/Button';
-  import {MyNetwork} from './MyNetwork';
 
-export const Mninet_VM = ({ openMininet, handleCloseMininet,handleOpenMininet,
-    visJsRef, onNetworkClick
+export const Mninet_VM = ({ openMininet, handleCloseMininet,handleOpenMininet, selectedTopologyIds,
+  setSelectedTopologyIds
 }) => {
-  const [values, setValues] = useState({
-    VM:'',
-  });
-  const [statuses, setStatuses] = useState({
-    'Mninet VM 1': true,
-    'Mninet VM 2': false,
-    'Mninet VM 3': true,
-    'Mninet VM 4': false,
-  });
   const handleValidate = () => {
-    console.log('VM', values.VM);
-    const vmId = values.VM;
     handleCloseMininet();
   };
-  const vmId = values.VM;
+
   return (
     <>
 <Modal open={openMininet} onClose={handleCloseMininet}>
@@ -57,20 +45,20 @@ export const Mninet_VM = ({ openMininet, handleCloseMininet,handleOpenMininet,
         </Typography>
         </Grid>
         <Grid item xs={12}>
-<FormControl fullWidth  variant="outlined">
-      <InputLabel>Mninet VM</InputLabel>
-      <Select
-        value={values.VM}
-        label="Mninet_VM"
-        onChange={(e) => setValues({ ...values, VM: e.target.value })}
-      >
-        {Object.keys(statuses).map(key => (
-            <MenuItem key={key} value={key} disabled={!statuses[key]}>
-                {`${key} (${statuses[key] ? 'Active' : 'Inactive'})`}
-            </MenuItem>
-            ))}
-      </Select>
-    </FormControl>
+        <FormControl fullWidth  variant="outlined">
+        <InputLabel id="topology-id-label">Mninet VM</InputLabel>
+        <Select
+          labelId="topology-id-label"
+          id="topology-id"
+          value={selectedTopologyIds}
+          label="Mninet_VM"
+          onChange={(event) => setSelectedTopologyIds(event.target.value)}
+        >
+          <MenuItem value="1">Topology 1</MenuItem>
+          <MenuItem value="2">Topology 2</MenuItem>
+        </Select>
+
+        </FormControl>
     </Grid>
     <Grid item xs={6}>
         <Button onClick={handleValidate} fullWidth>validate</Button>

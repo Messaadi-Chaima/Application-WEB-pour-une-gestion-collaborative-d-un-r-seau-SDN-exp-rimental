@@ -65,7 +65,12 @@ export const MyNetwork = () => {
     edges: new DataSet([]),
   });
 
+  const [nodesData, setNodesData] = useState([]);
+  const [edgeDataArray, setEdgeData] = useState([]);
+  const [edgeDataArray2, setEdgeData2] = useState([]);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [selectedTopologyId, setSelectedTopologyId] = useState('1'); // New state for selected topology ID
+
   const [responseData, setResponseData] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const handleModalOpen = () => {
@@ -79,7 +84,7 @@ export const MyNetwork = () => {
   useEffect(() => {
     const checkConnection = async () => {
         try {
-            const response = await axios.get('http://localhost:5049/check-connection');
+            const response = await axios.get('http://41.111.146.70:5000/check-connection');
             if (response.status === 200) {
                 setIsBackendConnected(true);
                 initializeTopology(); // Si la connexion est réussie, initialisez la topologie
@@ -101,118 +106,101 @@ const clearData = () => {
   dataRef.current.edges.clear(); // Supprime toutes les arêtes
 };
 
-const initializeTopology = async () => {
-  try {
-    const response = await axios.get('http://localhost:5049/restapi/topologies/1/config');
-    //console.log('Topology initialized with success:', response.data);
 
-    // Add the code here
-    //axios.get('http://localhost:5049/restapi/topologies/1/config')
-      //.then(response => {
-     //   console.log('Topology configuration:', response.data);
-     // })
-    //  .catch(error => {
-    //    console.error('Error fetching topology configuration:', error);
-    //  });
-      // Mettez à jour l'état dataRef.current avec les nœuds et les arêtes
-   // dataRef.current.nodes.clear();
-   // dataRef.current.edges.clear();
+useEffect(() => {
+  if (selectedTopologyId !== null) {
+    clearData(dataRef);
+    cleanupResources()
+    initializeTopology(selectedTopologyId);
     
-    const topologyData = response.data;
-    const currentTime = new Date();
-    const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
-    setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
-    console.log(topologyData)
-    // Accédez aux données de la topologie
-    const { hosts, switches, host_switch_links } = topologyData;
-    
-
-    // Parcourez chaque hôte
-    for (const hostId in hosts) {
-      if (Object.hasOwnProperty.call(hosts, hostId)) {
-        const host = hosts[hostId];
-        console.log(`Hôte ID: ${hostId}`);
-        
-        // Créez le nœud de l'hôte
-        const newHostNode = {
-          id: hostId, // ID du nœud est l'ID de l'hôte
-          label: `Host ${hostId}`, // Étiquette du nœud
-          group: 'host', // Groupe du nœud (hôte)
-          x: host.position.x, // Position x avec décalage
-          y: host.position.y, // Position y avec décalage
-        };
-        dataRef.current.nodes.add(newHostNode); // Ajoutez le nœud de l'hôte à dataRef.current.nodes
-        
-        // Parcourez chaque interface de l'hôte
-        host.intfs.forEach(intf => {
-          console.log(`- Port (Interface): ${intf.name}`);
-
-          // Créez le nœud du port
-          const newPortNode = {
-            id: `${hostId}-${intf.name}`, // ID du nœud est composé de l'ID de l'hôte et de l'interface
-            label: `${intf.name}`, // Étiquette du nœud
-            group: 'port', // Groupe du nœud (port)
-            x: intf.x, // Position x avec décalage
-            y: intf.y, // Position y avec décalage
-          };
-          dataRef.current.nodes.add(newPortNode); // Ajoutez le nœud du port à dataRef.current.nodes
-
-          // Ajoutez un bord (edge) entre le nœud de l'hôte et le nœud du port
-          dataRef.current.edges.add({ from: hostId, to: `${hostId}-${intf.name}` });
-        });
-      
-      }
-    }
-   
-    // Parcourez chaque commutateur
-    for (const switchId in switches) {
-      if (Object.hasOwnProperty.call(switches, switchId)) {
-        const switchObj = switches[switchId];
-        console.log(`Commutateur ID: ${switchId}`);
-
-        // Créez le nœud du commutateur
-        const newSwitchNode = {
-          id: switchId, // ID du nœud est l'ID du commutateur
-          label: `Switch ${switchId}`, // Étiquette du nœud
-          group: 'switch', // Groupe du nœud (commutateur)
-          x: switchObj.position.x, // Position x avec décalage
-          y: switchObj.position.y, // Position y avec décalage
-        };
-        dataRef.current.nodes.add(newSwitchNode); // Ajoutez le nœud du commutateur à dataRef.current.nodes
-
-        // Parcourez chaque interface du commutateur
-        switchObj.intfs.forEach(intf => {
-          //console.log(`- Port (Interface): ${intf.name}`);
-          //console.log(`- ETH POS (Interface): ${intf.x}`);
-          // Créez le nœud du port
-          const newPortNode = {
-            id: `${switchId}-${intf.name}`, // ID du nœud est composé de l'ID du commutateur et de l'interface
-            label: `${intf.name}`, // Étiquette du nœud
-            group: 'port', // Groupe du nœud (port)
-            x: intf.x, // Position x avec décalage
-            y: intf.y, // Position y avec décalage
-          };
-          dataRef.current.nodes.add(newPortNode); // Ajoutez le nœud du port à dataRef.current.nodes
-
-          // Ajoutez un bord (edge) entre le nœud du commutateur et le nœud du port
-          dataRef.current.edges.add({ from: switchId, to: `${switchId}-${intf.name}` });
-        });
-       
-      }
-    }
-    // Ajoutez les arêtes entre les hôtes et les commutateurs en fonction de host_switch_links
-     host_switch_links.forEach(link => {
-      const { host, switch: switchId, host_intf, switch_intf } = link;
-      // Ajoutez un bord (edge) entre le port de l'hôte et le port du commutateur
-      dataRef.current.edges.add({ from: `${host}-${host_intf}`, to: `${switchId}-${switch_intf}` });
-         
-          // Mettez à jour l'affichage de la topologie avec les nouveaux nœuds et arêtes
-          //network.setData(dataRef.current);
-    });
-  } catch (error) {
-   
   }
-};
+}, [selectedTopologyId]);
+
+
+
+  const initializeTopology = async (topologyId) => {
+    try {
+      const response = await axios.get(`http://41.111.146.70:5000/restapi/topologies/${topologyId}/config`,);
+
+      if (response.status === 200) {
+        const { nodes = [], edges = [], edges_s = [] } = response.data;
+  
+        console.log('Topology Data:', { nodes, edges, edges_s });
+  
+        // Adding nodes (hosts and switches) to dataRef
+      nodes.forEach(({ id, label, group, x, y, ports = [] }) => {
+        // Define the new node with its properties and ports
+        const newNode = {
+          id,
+          label,
+          group,
+          x,
+          y,
+          ports: [],
+        };
+
+        // Add the main node (host or switch) to dataRef
+        dataRef.current.nodes.add(newNode);
+        nodesData.push(newNode);
+
+        // Add ports and their edges to the parent node
+        ports.forEach(({ id: portId, label: portLabel, group: portGroup, x: portX, y: portY }) => {
+          const newPort = {
+            id: portId,
+            label: portLabel,
+            group: portGroup,
+            x: portX,
+            y: portY,
+          };
+          dataRef.current.nodes.add(newPort);
+          dataRef.current.edges.add({ from: id, to: portId });
+          newNode.ports.push(newPort);
+        });
+      });
+  
+
+    
+        edges.forEach(({switch_id,host_id,switch_label,host_label, switch_port, host_port }) => {
+          dataRef.current.edges.add({ from: switch_port, to: host_port });
+  
+          edgeDataArray.push({
+            switch_id:switch_id,
+            host_id:host_id,
+            switch_label:switch_label,
+            host_label:host_label,
+            switch_port:switch_port,
+            host_port,host_port
+          })
+        });
+        
+       
+  
+        edges_s.forEach(({switch_id1,switch_id2,switch_label1,switch_label2,switch_port1, switch_port2 }) => {
+          dataRef.current.edges.add({ from: switch_port1, to: switch_port2 });
+          edgeDataArray2.push({
+            switch_id1:switch_id1,
+            switch_id2:switch_id2,
+            switch_label1:switch_label1,
+            switch_label2:switch_label2,
+            switch_port1:switch_port1,
+            switch_port2:switch_port2
+          })
+ 
+        });
+  
+        //console.log('Nodes:', dataRef.current.nodes.get());
+        //console.log('Edges:', dataRef.current.edges.get());
+      } else if (response.status === 404) {
+        console.log("File doesn't exist");
+      } else {
+        console.error("Failed to fetch topology configuration");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // Handle other types of errors if needed
+    }
+  };
+
 
   const [selectedNodeType, setSelectedNodeType] = useState(null);
   const [editNodeId, setEditNodeId] = useState(null);
@@ -288,12 +276,24 @@ const initializeTopology = async () => {
     console.log("Previous nodes from:", previousNodesFrom);
     console.log("Previous nodes to:", previousNodesTo);
 
-    let switchId, hostId, switchlabel, hostlabel;
+    let switchId, hostId, switchlabel, hostlabel,switchport,hostport;
+    let switchId1,switchId2,switchlabel1,switchlabel2,switchport1,switchport2;
     if (previousNodesFrom[0]?.group === "switch" && previousNodesTo[0]?.group === "host") {
       switchId = previousNodesFrom[0]?.id.toString(); // ID du switch
       hostId = previousNodesTo[0]?.id.toString(); // ID de l'hôte
       switchlabel = fromNode.label; // Label du switch
       hostlabel = toNode.label; // Label de l'hôte
+      switchport =fromNode.id;
+      hostport = toNode.id;
+
+      edgeDataArray.push({
+        switch_id: switchId,
+        host_id: hostId,
+        switch_label: switchlabel,
+        host_label: hostlabel,
+        switch_port : switchport,
+        host_port : hostport
+      })
   } 
   // Si l'edge va de l'hôte vers le switch
   else if (previousNodesFrom[0]?.group === "host" && previousNodesTo[0]?.group === "switch") {
@@ -301,20 +301,37 @@ const initializeTopology = async () => {
       hostId = previousNodesFrom[0]?.id.toString(); // ID de l'hôte
       switchlabel = toNode.label; // Label du switch
       hostlabel = fromNode.label; // Label de l'hôte
-  }
-  
-    try {
-      const response = await axios.post("http://localhost:5049/restapi/topologies/1/connect_host_to_switch", {
+      switchport =toNode.id;
+      hostport = fromNode.id;
+
+       edgeDataArray.push({
         switch_id: switchId,
         host_id: hostId,
-        switch_label:switchlabel,
-        host_label:hostlabel
-      });
-      console.log("Réponse de la requête:", response.data);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de la requête:", error);
-      // Gérer les erreurs de requête ici
+        switch_label: switchlabel,
+        host_label: hostlabel,
+        switch_port : switchport,
+        host_port : hostport
+      })
     }
+      else if (previousNodesFrom[0]?.group === "switch" && previousNodesTo[0]?.group === "switch") {
+        switchId1 = previousNodesTo[0]?.id.toString(); // ID du switch
+        switchId2 = previousNodesFrom[0]?.id.toString(); // ID de l'hôte
+        switchlabel1 = toNode.label; // Label du switch
+        switchlabel2 = fromNode.label; // Label de l'hôte
+        switchport1=toNode.id;
+        switchport2=fromNode.id;
+
+        edgeDataArray2.push({
+          switch_id1: switchId1,
+          switch_id2: switchId2,
+          switch_label1: switchlabel1,
+          switch_label2: switchlabel2,
+          switch_port1:switchport1,
+          switch_port2:switchport2
+        })
+      }
+  
+
   
     const newData = {
       ...data,
@@ -396,7 +413,7 @@ const initializeTopology = async () => {
         group: selectedNodes.length > 0 ? dataRef.current.nodes.get(selectedNodes[0]).group : "", // Utiliser le groupe du premier nœud sélectionné
     };
 
-        axios.post('http://localhost:5049/restapi/topologies/1/delete-selected', data)
+        axios.post('http://41.111.146.70:5000/restapi/topologies/1/delete-selected', data)
             .then(response => {
                 console.log(response.data.message);
                 // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
@@ -413,7 +430,7 @@ const initializeTopology = async () => {
             group: "links",
         };
 
-        axios.post('http://localhost:5049/restapi/topologies/1/delete-selected', data)
+        axios.post('http://41.111.146.70:5000/restapi/topologies/1/delete-selected', data)
             .then(response => {
                 console.log(response.data.message);
                 // Mettez à jour votre interface utilisateur ou effectuez d'autres actions nécessaires après la suppression réussie
@@ -436,6 +453,8 @@ const initializeTopology = async () => {
     callback(data);
   };
 
+
+  /*
   const options = {
     physics: {
       enabled: false,
@@ -552,6 +571,130 @@ const initializeTopology = async () => {
     },
     interaction: { hover: true },
   };
+*/
+
+const options = {
+  physics: {
+    enabled: false,
+  },
+  manipulation: {
+    enabled: false,
+    addEdge: onAddEdge,
+    editNode: onEditNode,
+    deleteNode: false,
+  },
+  layout: {
+    hierarchical: {
+        direction: "UD", // Direction haut vers bas (Up-Down)
+        sortMethod: "directed" // Trie les nœuds selon la direction des arêtes
+    }
+},
+  nodes: {
+    shape: "image",
+    chosen: true,
+    // Invisible border, 0 makes selected border dissapear
+    borderWidth: 2,
+    borderWidthSelected: 2,
+    font: {
+      align: "center",
+      color: '#240747',
+      face: "Source Sans Pro",
+      strokeWidth: 0,
+    },
+    shapeProperties: {
+      borderRadius: 6,
+      useBorderWithImage: true,
+    },
+    scaling: {
+      label: {
+        // Don't hide labels while zooming in too much (useful for image export)
+        maxVisible: Number.MAX_SAFE_INTEGER,
+      },
+    },
+  },
+  groups: {
+    host: {
+      shape: "image",
+      image: hostIcon,
+      size: 20,
+      color: {
+        background: 'white',
+        border: 'white',
+        highlight: {
+          background: 'white',
+          border: 'green'
+        },
+        hover: {
+          background: "white",
+          border: "blue",
+        },
+      },
+    },
+    switch: {
+      shape: "image",
+      image: switchIcon,
+      size: 20,
+      color: {
+        background: 'white',
+        border: 'white',
+        highlight: {
+          background: 'white',
+          border: '#FFC300'
+        },
+        hover: {
+          background: "white",
+          border: "blue",
+        },
+      },
+    },
+    controller: {
+      shape: "image",
+      image: controllerIcon,
+      size: 20,
+      color: {
+        background: 'white',
+        border: 'white',
+        highlight: {
+          background: 'white',
+          border: '#C70039'
+        },
+        hover: {
+          background: "white",
+          border: "blue",
+        },
+      },
+    },
+    port: {
+      shape: "image",
+      image: portIcon,
+      size: 8,
+      color: {
+        background: 'white',
+        border: 'white',
+        highlight: {
+          background: 'white',
+          border: '#f70776'
+        },
+        hover: {
+          background: "white",
+          border: "blue",
+        },
+      },
+    },
+  },
+  edges: {
+    smooth: false,
+    color: 'red',
+    font: {
+      align: "top", // Pour aligner le texte au-dessus des arêtes
+    },
+    edgeLabel: function (edge) {
+      return edge.label;
+    },
+  },
+  interaction: { hover: true },
+};
+
 
   const onNetworkClick = (event) => {
     if (selectedNodeType && network) {
@@ -574,179 +717,90 @@ const initializeTopology = async () => {
   };
   
 
-  const addNode = async (x, y, group) => {
-    if (group !== 'host' && group !== 'switch' && group !== 'port') {
-      const newId = generateUniqueId();
-      const newNode = {
-        id: newId,
-        label: `${group} ${newId}`,
-        group: group,
-        x: x,
-        y: y,
-      };
-      dataRef.current.nodes.add(newNode);
-      if (network) {
-        network.setData(dataRef.current);
-      }
-      console.log(dataRef.current.nodes);
-    } else if (group === 'host') {
-      const newId = generateUniqueId();
-      const newNode = {
-        id: newId,
-        label: `${group} ${newId}`,
-        group: group,
-        x: x,
-        y: y,
-      };
+  const addNode = (x, y, group) => {
+    let newNode = {};
+    let ports = [];
+    const newId = generateUniqueId();
   
-      // Add a new host node
-      dataRef.current.nodes.add(newNode);
-
-    // Création d'un tableau pour stocker les ports associés à l'hôte
-    const ports = [];
-
-    // Ajout de la logique pour ajouter un port
-    for (let i = 0; i < 1; i++) {
-      const newPortId = generateUniqueId();
-      const newPort = {
-        id: newPortId,
-        label: `eth${i}`,
-        group: "port",
-        x: x - 20 + i * 30, // Positionnement du port
-        y: y + 90,
-      };
-      dataRef.current.nodes.add(newPort);
-
-      dataRef.current.edges.add({ from: newId, to: newPortId });
-
-      // Ajout du port au tableau ports
-      ports.push({
-        id: newPortId,
-        label: newPort.label,
-        group: newPort.group,
-        x: newPort.x,
-        y: newPort.y
-      });
-    }
-    console.log("HOTE :", newId);
-    console.log("X :", x);
-    console.log("Y :", y);
-    // Envoi de la requête POST avec les informations sur l'hôte et les ports
-    try {
-      const response = await axios.post("http://localhost:5049/restapi/topologies/1/hosts", {
-        host_id: `${newId}`, // Formatage de l'ID de l'hôte
-        x: x,
-        y: y,
-        ports: ports, // Ajout du tableau de ports
-      });
-      console.log("Réponse de la requête:", response.data);
-      const currentTime = new Date();
-      const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
-      setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de la requête:", error);
-      // Gérer les erreurs de requête ici
-    }
-
-    } else if(group == 'switch'){
-        const newId = generateUniqueId();
-        const newNode = {
-          id: newId,
-          label: `${group} ${newId}`,
-          group: group,
-          x: x,
-          y: y,
+    if (group === 'host' || group === 'switch') {
+      for (let i = 0; i < (group === 'host' ? 1 : 6); i++) {
+        const newPortId = generateUniqueId();
+        const newPort = {
+          id: newPortId,
+          label: `${newId}-eth${i}`,
+          group: "port",
+          x: x - 50 + i * 30,
+          y: y + 90,
         };
-        const ports = [];
-
-        dataRef.current.nodes.add(newNode);
-        // Add 6 new port nodes connected to the switch node
-        for (let i = 0; i < 6; i++) {
-          const newPortId = generateUniqueId();
-          const newPort = {
-            id: newPortId,
-            label: `${newId}-eth${i}`,
-            group: "port",
-            x: x - 50 + i * 30,
-            y: y + 90,
-          };
-          dataRef.current.nodes.add(newPort);
-
-          dataRef.current.edges.add({ from: newId, to: newPortId });
-
-          ports.push({
-            id: newPortId,
-            label: newPort.label,
-            group: newPort.group,
-            x: newPort.x,
-            y: newPort.y
-          });
-
-
-        }
-        setEditNodeId(newId);
-        setEditNodeLabel(newNode.label);
-        setOpenDialogopenDialogSwitch(true)  ;
-
-        if (network) {
-          network.setData(dataRef.current);
-        }
-        console.log(dataRef.current.nodes);
-
-        try {
-          const response = await axios.post("http://localhost:5049/restapi/topologies/1/switches", {
-            switch_id: `${newId}`, // Formatage de l'ID du commutateur
-            x: x,
-            y: y,
-            ports: ports, // Ajout du tableau de ports
-          });
-          console.log("Réponse de la requête:", response.data);
-          const currentTime = new Date();
-          const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
-          setResponseData(prevData => [...prevData, { responseData: response.data, timestamp: formattedTime }]);
-        } catch (error) {
-          console.error("Erreur lors de l'envoi de la requête:", error);
-          // Gérer les erreurs de requête ici
-        }
-
-
-        } else if (group === 'port') {
-          const newId = generateUniqueId();
-    const newNode = {
+        dataRef.current.nodes.add(newPort);
+        dataRef.current.edges.add({ from: newId, to: newPortId });
+        ports.push(newPort);
+      }
+    }
+  
+    newNode = {
       id: newId,
       label: `${group} ${newId}`,
       group: group,
       x: x,
       y: y,
+      ports: ports,
     };
+  
     dataRef.current.nodes.add(newNode);
-
-    const firstSwitchId = getFirstSwitchId(); // Obtenez l'ID du premier switch créé
-    if (firstSwitchId) {
-      const newEdge = {
-        from: newId,
-        to: firstSwitchId,
-      };
-      dataRef.current.edges.add(newEdge);
-    }
-
+    nodesData.push(newNode);
+  
     if (network) {
       network.setData(dataRef.current);
     }
     console.log(dataRef.current.nodes);
-
-
-
-  }
   };
+  
+
+
+  const cleanupResources = () => {
+    dataRef.current.nodes.clear();
+    dataRef.current.edges.clear();
+   
+    nodesData.length = 0;
+    edgeDataArray.length = 0;
+    edgeDataArray2.length = 0;
+  };
+  
+
+
 
   const generateUniqueId = () => {
     let newId;
     do {
-      newId = Math.floor(Math.random() * 20) + 1;
+      newId = Math.floor(Math.random() * 2000) + 1;
     } while (dataRef.current.nodes.get(newId));
     return newId;
   };
+
+
+
+  const sendNodesData = async (topologyId) => {
+
+    try {
+  
+      const dataToSend = {
+        topology_id: topologyId,
+        nodes: nodesData,
+        edges: edgeDataArray,
+        edges_s:edgeDataArray2,
+      };
+      console.log('Data to send:', JSON.stringify(dataToSend, null, 2));
+  
+  
+      const response = await axios.post(`http://41.111.146.70:5000/restapi/topologies/${topologyId}/nodes`, dataToSend);
+  
+      console.log("Response:", response.data);
+    } catch (error) {
+      console.error("Error sending request:", error);
+    } 
+  };
+
 
   useEffect(() => {
     if (visJsRef.current && !network) {
@@ -846,33 +900,6 @@ const initializeTopology = async () => {
   };
 
 
-  const handleFileReset = async () => {
-    try {
-      const response = await axios.post(`http://localhost:5049/restapi/topologies/1/reset-topology`);
-      console.log('Topology reset successfully',response);
-      initializeTopology();
-      clearData();
-      setOpenDialogopenDialogClean(false);
-    } catch (error) {
-      console.log('Failed to reset configuration file.');
-    }
-  };
-
-  const handleRun= async () => {
-     // Envoyez une requête POST pour créer la topologie
-     try {
-      const postResponse = await axios.post('http://localhost:5049/restapi/topologies/1');
-      console.log('Topologie créée avec succès:', postResponse.data);
-      const currentTime = new Date();
-      const formattedTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
-      setResponseData(prevData => [...prevData, { responseData: postResponse.data, timestamp: formattedTime }]);
-      // Votre logique pour initialiser la topologie avec les données retournées par la requête POST
-
-    } catch (postError) {
-      console.error('Erreur lors de la création de la topologie:', postError);
-      // Gérer les erreurs de création de la topologie ici
-    }
-  };
   const handleCloseDialogSave = () => {
     setOpenDialogopenDialogSave(false);
   };
@@ -1008,127 +1035,34 @@ const initializeTopology = async () => {
 
     setOpenDialogopenDialogSave(false);
   }
-  const [open, setOpen] = useState(false);
 
-  const handleShare = () => {
-    setOpen(true);
-  };
+//------------------------------------------------------------  
+  const [selectedTopologyIds, setSelectedTopologyIds] = React.useState([]);
 
-  const handleClose = () => {
-    setOpen(false);
-  };
-  const handleCopy = (pageUrl) => {
-    navigator.clipboard.writeText(pageUrl);
-    setCopied(true);
-  };
-//------------------------------Download------------------------------
-const handleDownloadConfig = () => {
-  if (!network) {
-    console.error("Network reference is not defined");
-    return;
+  // Fonction pour récupérer la configuration de la topologie
+const fetchTopologyConfig = async (topologyId) => {
+  try {
+    const response = await axios.get(`http://41.111.146.70:5000/restapi/topologies/${topologyId}/config`);
+    // Traitement de la réponse
+    console.log('Configuration de la topologie :', response.data);
+    // Mettre à jour l'état ou effectuer d'autres actions avec la réponse
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la configuration de la topologie :', error);
+    // Gérer les erreurs
   }
-
-  const topologyId = 1;
-  const hosts = {};
-  const switches = {};
-  const hostSwitchLinks = [];
-
-  network.body.data.nodes.forEach((node) => {
-    if (node.group === "host") {
-      hosts[node.id] = {
-        intfs: node.options?.intfs.map((intf) => ({
-          name: intf.name,
-          x: intf.x,
-          y: intf.y,
-        })),
-        position: {
-          x: node.x,
-          y: node.y,
-        },
-      };
-    } else if (node.group === "switch") {
-      switches[node.id] = {
-        intfs: node.options?.intfs.map((intf, index) => ({
-          name: `${node.id}-eth${index}`,
-          x: intf.x,
-          y: intf.y,
-        })),
-        position: {
-          x: node.x,
-          y: node.y,
-        },
-      };
-    }
-  });
-
-  network.body.data.edges.forEach((edge) => {
-    const fromNode = network.body.data.nodes.get(edge.from);
-    const toNode = network.body.data.nodes.get(edge.to);
-
-    if (fromNode && fromNode.group === "host" && toNode && toNode.group === "switch") {
-      hostSwitchLinks.push({
-        host: fromNode.id,
-        switch: toNode.id,
-        host_intf: edge.options.label,
-        switch_intf: `${toNode.id}-eth${toNode.options.intfs.findIndex(intf => intf.name === edge.options.label)}`,
-      });
-    } else if (fromNode && fromNode.group === "switch" && toNode && toNode.group === "host") {
-      hostSwitchLinks.push({
-        host: toNode.id,
-        switch: fromNode.id,
-        host_intf: edge.options.label,
-        switch_intf: `${fromNode.id}-eth${fromNode.options.intfs.findIndex(intf => intf.name === edge.options.label)}`,
-      });
-    }
-  });
-
-  const config = {
-    topology_id: topologyId,
-    hosts: hosts,
-    switches: switches,
-    links: [],
-    host_switch_links: hostSwitchLinks,
-  };
-
-  const jsonConfig = JSON.stringify(config, null, 2);
-  const blob = new Blob([jsonConfig], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "topology_1.json";
-  a.click();
-  URL.revokeObjectURL(url);
 };
-//----------------------------------Upload------------------------------------
-  const handleUpload = async () => {
-    try {
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.accept = "application/json";
-  
-      fileInput.addEventListener("change", async (event) => {
-        const file = event.target.files[0];
-        const jsonString = await file.text();
-        const topologyData = JSON.parse(jsonString);
-  
-        // Initialisez la topologie avec les données JSON
-        initializeTopology(topologyData);
-      });
-  
-      fileInput.click();
-    } catch (error) {
-      console.error("Error loading topology from JSON:", error);
-    }
-  };
-//------------------------------------------------------------
-const [openMininet, setOpenMininet] = useState(false);
 
-const handleCloseMininet = () => {
-    setOpenMininet(false);
-  };
-const handleOpenMininet = () => {
-    setOpenMininet(true);
-  };
+
+// Dans votre fonction de gestion du changement d'ID de topologie
+const handleTopologyIdChange = (event) => {
+  const selectedIds = event.target.value;
+  setSelectedTopologyIds(selectedIds);
+  
+  // Si vous voulez envoyer la requête pour chaque ID sélectionné
+  selectedIds.forEach(async (id) => {
+    initializeTopology(id);
+  });
+};
 
   return (
     <div>
@@ -1145,14 +1079,6 @@ const handleOpenMininet = () => {
           ref={visJsRef}
           onClick={onNetworkClick}
         ></div>
-
-      <Mninet_VM
-      openMininet={openMininet}
-      handleCloseMininet={handleCloseMininet}
-      handleOpenMininet={handleOpenMininet}
-      visJsRef={visJsRef}
-      onNetworkClick={onNetworkClick}
-      />
       <Notification 
       modalOpen={modalOpen} 
       handleModalClose={handleModalClose}
@@ -1170,79 +1096,13 @@ const handleOpenMininet = () => {
           {"Do you really want to clean the topology ?"}
         </DialogTitle>
         <DialogActions>
-            <Button onClick={handleFileReset}
+            <Button 
               variant="contained"
               color="success">Yes</Button>
             <Button variant="contained" color="error"
             onClick={handleCloseDialogClean}>No</Button>
         </DialogActions>
       </Dialog>  
-{/*------------Bouton Share--------------------*/}
-<Modal open={open} onClose={handleClose}>
-  <Box
-    sx={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: 500,
-      bgcolor: "background.paper",
-      boxShadow: 24,
-      p: 4,
-      borderRadius: 4,
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-    }}
-  >
-    <Box display="flex" alignItems="center" gap={2}>
-      <IosShareIcon sx={{ fontSize: 35 }} />
-      <Typography variant="h6" gutterBottom>
-        Share Options
-      </Typography>
-    </Box>
-    <Box display="flex" flexDirection="column" gap={2}>
-      <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">Anyone with this link can edit:</Typography>    
-      </Box>
-      <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">http://localhost:3000/MyNetwork</Typography>
-        <Chip
-          label="Edit"
-          variant="outlined"
-          color="primary"
-          size="small"
-          sx={{ ml: 2 }}
-        />
-        <Tooltip title="Copy link">
-          <IconButton onClick={() => copy("http://localhost:3000/MyNetwork")}>
-            <ContentCopyIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </Box>
-    <Box display="flex" flexDirection="column" gap={2}>
-      <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">Anyone with this link can view Only:</Typography>
-      </Box>
-      <Box display="flex" alignItems="center">
-        <Typography variant="subtitle1">http://localhost:3000/Consulter</Typography>
-        <Chip
-          label="View"
-          variant="outlined"
-          color="primary"
-          size="small"
-          sx={{ ml: 2 }}
-        />
-        <Tooltip title="Copy link">
-          <IconButton onClick={() => copy("http://localhost:3000/Consulter")}>
-            <ContentCopyIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </Box>
-  </Box>
-</Modal>
 {/*-------------Host Details-----------------------*/}
 <Modal open={openDialog} onClose={handleCloseDialog}>
         <Box
@@ -1670,16 +1530,11 @@ const handleOpenMininet = () => {
 {/*------------------Boutons: Run Stop Save Share---------*/}
       <ToggleButtonGroup
         aria-label="device"
-        sx={{ position: 'fixed', top: 80, left: "40%", }}
+        sx={{ position: 'fixed', top: 90, left: "40%", }}
         >
-      <Tooltip title="Save an Experience Configuration ">
-        <ToggleButton value="save" aria-label="save">
-        <SaveIcon onClick={initializeTopology}/>
-        </ToggleButton>
-        </Tooltip>
         <Tooltip title="Run ">
         <ToggleButton value="run" aria-label="run">
-        <PlayArrowIcon onClick={handleRun}/>
+          <PlayArrowIcon onClick={() => sendNodesData(selectedTopologyId)} />
         </ToggleButton>
         </Tooltip>
         <Tooltip title="Stop ">
@@ -1687,7 +1542,7 @@ const handleOpenMininet = () => {
           <StopIcon />
         </ToggleButton>
         </Tooltip>
-	<Tooltip title="Pause ">
+	      <Tooltip title="Pause ">
         <ToggleButton value="Pause" aria-label="Pause">
           <PauseIcon />
         </ToggleButton>
@@ -1702,26 +1557,20 @@ const handleOpenMininet = () => {
           <CleaningServicesIcon onClick={handleOpenDialogClean} />
         </ToggleButton>
         </Tooltip>
-        <Tooltip title="Choose the Mininet machine ">
-        <ToggleButton value="Choose_the_Mininet_machine" aria-label="Choose the Mininet machine">
-          <AppsIcon onClick={handleOpenMininet} />
-        </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Share">
-        <ToggleButton value="Share" aria-label="Share">
-          <IosShareIcon onClick={handleShare} />
-        </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Download">
-        <ToggleButton value="Download" aria-label="Download">
-          <DownloadIcon onClick={handleDownloadConfig} />
-        </ToggleButton>
-        </Tooltip>
-        <Tooltip title="Upload">
-        <ToggleButton value="Upload" aria-label="Upload">
-          <UploadIcon onClick={handleUpload} />
-        </ToggleButton>
-        </Tooltip>
+
+        <FormControl>
+        <InputLabel id="topology-id-label">Topology ID</InputLabel>
+        <Select
+          labelId="topology-id-label"
+          id="topology-id"
+          value={selectedTopologyId}
+          onChange={(event) => setSelectedTopologyId(event.target.value)}
+        >
+          <MenuItem value="1">Topology 1</MenuItem>
+          <MenuItem value="2">Topology 2</MenuItem>
+        </Select>
+        </FormControl>
+
       </ToggleButtonGroup>
 {/*-------------------------Model Save---------------------------*/}
       <Modal open={openDialogSave} onClose={handleCloseDialogSave}>
